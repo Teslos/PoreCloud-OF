@@ -229,7 +229,10 @@ def test_buoyancy_impulse_is_antiparallel_to_gravity():
     ])
     td = pcr.build_tracks(rows)[0]
     imp = td['LF_impulse']
-    assert imp[1] < 0, 'buoyancy should oppose -y gravity'
+    # The CSV here uses the pre-fix convention (buoyancy written along g);
+    # build_tracks detects that and flips it, so the track must come back with
+    # buoyancy opposing gravity - i.e. pointing +y, lifting the bubble.
+    assert imp[1] > 0, f'buoyancy must oppose -y gravity, got {imp}'
     assert abs(imp[0]) < 1e-12 and abs(imp[2]) < 1e-12, \
         f'buoyancy has off-axis components: {imp}'
 
@@ -265,6 +268,58 @@ def test_real_run_invariants():
     t0 = min(float(r['Time']) for r in rows)
     first = [r['PoreID'] for r in rows if float(r['Time']) == t0]
     assert len(first) == len(set(first)), 'duplicate PoreID within one snapshot'
+
+
+# ── buoyancy sign and expulsion budget ───────────────────────────────────────
+
+def test_buoyancy_sign_detects_the_pre_fix_convention():
+    """Pre-2026-09-17 CSVs wrote buoyancy along g; it must be flipped."""
+    down = make_rows([{'PoreID': '1', 'Time': f'{i * 1e-6}', 'Fbuoyy': '-1e-9'}
+                      for i in range(4)])
+    up = make_rows([{'PoreID': '1', 'Time': f'{i * 1e-6}', 'Fbuoyy': '+1e-9'}
+                    for i in range(4)])
+    assert pcr.buoyancy_sign(down) == -1     # points along g -> needs flipping
+    assert pcr.buoyancy_sign(up) == +1
+    # and the flip must actually reach the track
+    assert pcr.build_tracks(down)[0]['LF'][0, 1] > 0
+
+
+def test_expulsion_budget_reads_a_helping_force_as_helping():
+    """EM pushing +y on every bubble must come back as 100% upward."""
+    rows = make_rows([
+        {'PoreID': str(p), 'Time': f'{i * 1e-6}', 'Fy_N': '1e-9',
+         'Fbuoyy': '1e-10', 'Cy_m': f'{(400 + i) * 1e-6}'}
+        for p in range(5) for i in range(5)
+    ])
+    b = pcr.expulsion_budget(pcr.build_tracks(rows, buoy_sign=1))
+    assert b['em_up_fraction_samples'] == 1.0
+    assert b['em_up_fraction_bubbles'] == 1.0
+    assert b['rose_fraction'] == 1.0
+    assert b['median_rise_um'] > 0
+
+
+def test_expulsion_budget_reads_an_opposing_force_as_opposing():
+    rows = make_rows([
+        {'PoreID': str(p), 'Time': f'{i * 1e-6}', 'Fy_N': '-1e-9',
+         'Fbuoyy': '1e-10', 'Cy_m': f'{(400 - i) * 1e-6}'}
+        for p in range(5) for i in range(5)
+    ])
+    b = pcr.expulsion_budget(pcr.build_tracks(rows, buoy_sign=1))
+    assert b['em_up_fraction_bubbles'] == 0.0
+    assert b['rose_fraction'] == 0.0
+    assert b['impulse_ratio_median'] < 0      # opposes buoyancy
+
+
+def test_expulsion_ratio_is_magnitude_not_signed():
+    """A large downward EM force still counts as dominating the budget."""
+    rows = make_rows([
+        {'PoreID': '1', 'Time': f'{i * 1e-6}', 'Fy_N': '-1e-8', 'Fbuoyy': '1e-10'}
+        for i in range(5)
+    ])
+    b = pcr.expulsion_budget(pcr.build_tracks(rows, buoy_sign=1))
+    assert math.isclose(b['ratio_median'], 100.0, rel_tol=1e-6)
+    assert b['em_exceeds_buoyancy'] == 1.0
+    assert b['em_up_fraction_samples'] == 0.0   # ... while pointing the wrong way
 
 
 # ── end-to-end ───────────────────────────────────────────────────────────────

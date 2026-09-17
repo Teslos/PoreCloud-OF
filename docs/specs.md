@@ -349,6 +349,57 @@ physics call rather than a plumbing one:
 Note also that a parcel can be reported frozen at ε₁ ≥ 0.5 within a single step: capture
 fires in `postMove`, the CSV is written in `postEvolve`, and ε₁ is re-read in between.
 
+### 5.8 Expulsion budget — the exclusion force works against expulsion
+
+The question the library exists to answer: at 0.2 T azimuthal, does the Leenov–Kolin
+exclusion force help lift bubbles out of the pool? Expulsion means reaching the free
+surface at y ≈ 547 µm, so the axis is +y. 349891 active samples over 2848 bubbles.
+
+**Magnitude — it dominates the budget.**
+
+| | |
+|---|---|
+| median \|F\| exclusion | 1.19e-08 N |
+| median \|F\| buoyancy | 4.29e-10 N |
+| median ratio | **25×** |
+| samples where EM exceeds buoyancy | 99.8% |
+
+**Direction — it points the wrong way.**
+
+| | |
+|---|---|
+| samples with EM pushing up | 27.3% |
+| bubbles with net upward EM impulse | **29.6%** |
+| median EM/buoyancy impulse ratio | **−13.7** (negative: opposes buoyancy) |
+
+**Outcome.** 43.2% of bubbles rose, median net displacement −12.1 µm (median y went
+461 → 424 µm), and 5.2% ended at or above the free surface.
+
+So the exclusion force is ~25× buoyancy and, for roughly 70% of bubbles, aimed downward —
+it does not merely fail to assist expulsion, it actively opposes it, overwhelming buoyancy
+by ~14× in time-integrated impulse. This sharpens §5.4's reconciliation: the study
+concluded expulsion fails at 0.2 T, and the Lagrangian budget says the mechanism is not a
+force too weak to lift but a force predominantly pointing the wrong way. Raising B would
+strengthen a force that is, on this evidence, mostly downward.
+
+Two caveats that keep this from being the last word:
+
+  - **Trajectories are not set by the EM force.** corr(vertical EM impulse, net rise) =
+    −0.08, and melt advection outruns the EM drift by ~50× (median speed 1.4 m/s against
+    an 11–60 mm/s drift, §5.4). The sign of that weak correlation is negative, consistent
+    with opposition, but bubble paths are dominated by the flow.
+  - The mean vertical EM force is *positive* while the median is negative: the top 1% of
+    upward samples carry 25% of the positive sum. Conclusions here use medians and
+    per-bubble impulses. Filtering to coverage ≥ 0.89 moves nothing (29.7% vs 29.6%
+    upward), so §5.5 truncation is not driving it.
+
+**A sign error found on the way.** `PoreForceReport` wrote buoyancy as `V*(rhoc - rho)*g`,
+the negative of the `GravityForce` the solver integrates (`mass*g*(1 - rhoc/rho)`), so it
+reported a gas bubble in liquid metal being pushed *downward*. Fixed; the correction is an
+exact negation, so `scripts/poreCloudReport.py` detects the old convention and flips it
+rather than requiring a re-run. Only the reported column was affected — the integrated
+motion always used OpenFOAM's own force.
+
 ## 6. Deliberate omissions
 
 **Drag / added mass / lift are not broken out in the CSV.** They are evaluated inside

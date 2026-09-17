@@ -81,14 +81,38 @@ def load_rows(csv_path):
     return rows
 
 
+GRAVITY = np.array([0.0, -9.81, 0.0])
+
+
+def buoyancy_sign(rows, gravity=GRAVITY):
+    """+1 if the CSV's buoyancy already opposes gravity, -1 if it needs flipping.
+
+    A gas bubble in liquid metal is always lighter than what surrounds it, so
+    its net buoyancy must oppose g.  PoreForceReport wrote V*(rhoc-rho)*g until
+    2026-09-17, which is the negative of the GravityForce the solver actually
+    integrated, so CSVs from before then report it pointing downward.  The
+    correction is an exact negation, hence recoverable in post.
+    """
+    ghat = gravity / np.linalg.norm(gravity)
+    fb = np.array([[float(r['Fbuoyx']), float(r['Fbuoyy']), float(r['Fbuoyz'])]
+                   for r in rows])
+    along = fb @ ghat
+    nz = along[np.abs(along) > 0]
+    if len(nz) == 0:
+        return 1
+    return -1 if (nz > 0).mean() > 0.5 else 1
+
+
 def build_tracks(rows, cell_volume=DEFAULT_CELL_VOLUME, min_len=4,
-                 active_only=True):
+                 active_only=True, buoy_sign=None):
     """Group CSV rows into analyse_pore_forces-style track dicts.
 
     active_only drops samples of parcels already entrapped by the
     solidification front: they are held at a fixed position by design, so
     including them would report a velocity of zero as if it were physics.
     """
+    buoy = buoyancy_sign(rows) if buoy_sign is None else buoy_sign
+
     by_id = defaultdict(list)
     for r in rows:
         if active_only and int(float(r['Active'])) != 1:
@@ -119,7 +143,7 @@ def build_tracks(rows, cell_volume=DEFAULT_CELL_VOLUME, min_len=4,
             'd_over_dx': np.array([float(r['dOverDx']) for r in recs]),
             # Force densities, so the units match the report's N/m3 axes.
             'EF': vec('Fx_N', 'Fy_N', 'Fz_N') / vol_safe[:, None],
-            'LF': vec('Fbuoyx', 'Fbuoyy', 'Fbuoyz') / vol_safe[:, None],
+            'LF': buoy * vec('Fbuoyx', 'Fbuoyy', 'Fbuoyz') / vol_safe[:, None],
             # Carrier velocity: Uslip = U_parcel - Uc  =>  Uc = U - Uslip
             'U_pore': vec('Ux', 'Uy', 'Uz') - vec('Uslipx', 'Uslipy', 'Uslipz'),
         }
@@ -291,10 +315,196 @@ def main():
     if args.max_tracks:
         plotted = plotted[:args.max_tracks]
 
+    budget = expulsion_budget(tracks)
+    print_expulsion_table(budget)
+
     apf.print_summary_table([plotted], [args.label])
     out = args.output or args.csv.with_suffix('.pdf')
     apf.make_pdf([plotted], [args.label], out)
     print(f'\nreport -> {out}  ({len(plotted)} of {len(tracks)} tracks plotted)')
+
+    # make_pdf owns its own PdfPages, so the budget gets a companion file
+    # rather than restructuring code that already works.
+    from matplotlib.backends.backend_pdf import PdfPages
+    bout = out.with_name(out.stem + '_expulsion.pdf')
+    with PdfPages(bout) as pdf:
+        add_expulsion_pages(pdf, budget, apf.PUB_COLORS, args.label)
+    print(f'expulsion budget -> {bout}')
+
+
+
+
+# ── Expulsion budget ─────────────────────────────────────────────────────────
+#
+# The question this exists to answer: does the Leenov-Kolin exclusion force
+# help push bubbles out of the melt pool?
+#
+# Expulsion means reaching the free surface, so the axis that matters is +y
+# (the pool's free surface sits near y = 547 um in this geometry).  Two things
+# have to be separated, and conflating them is easy:
+#
+#   magnitude - is the EM force big enough to matter next to buoyancy?
+#   direction - does it point the right way?
+#
+# A force can dominate the budget and still be useless, or worse than useless,
+# if it points down.  Both are reported, per sample and integrated per bubble.
+
+FREE_SURFACE_UM = 547.0
+
+
+def expulsion_budget(tracks, surface_um=FREE_SURFACE_UM):
+    """Force budget along the expulsion axis, per sample and per bubble.
+
+    Forces are converted back from the report's densities to newtons, because
+    what moves a bubble is the force, not the density.
+    """
+    em_y, bu_y, em_m, bu_m, cov = [], [], [], [], []
+    imp_em, imp_bu, rise, y_end = [], [], [], []
+
+    for t in tracks:
+        vol = t['size'] * DEFAULT_CELL_VOLUME
+        fe = t['EF'] * vol[:, None]
+        fb = t['LF'] * vol[:, None]
+        em_y.append(fe[:, 1]); bu_y.append(fb[:, 1])
+        em_m.append(np.linalg.norm(fe, axis=1))
+        bu_m.append(np.linalg.norm(fb, axis=1))
+        cov.append(t['coverage'])
+
+        dt = np.diff(t['t_us']) * 1e-6
+        imp_em.append(np.nansum(fe[:-1, 1] * dt))
+        imp_bu.append(np.nansum(fb[:-1, 1] * dt))
+        rise.append(t['displacement'][1])
+        y_end.append(t['depth'][-1])
+
+    cat = lambda a: np.concatenate(a)
+    arr = lambda a: np.asarray(a, float)
+    s_em_y, s_bu_y = cat(em_y), cat(bu_y)
+    s_em_m, s_bu_m = cat(em_m), cat(bu_m)
+    ratio = np.divide(s_em_m, s_bu_m, out=np.full_like(s_em_m, np.nan),
+                      where=s_bu_m > 0)
+    i_em, i_bu, dy, ye = arr(imp_em), arr(imp_bu), arr(rise), arr(y_end)
+    good = np.isfinite(i_em) & np.isfinite(dy)
+
+    return {
+        'n_samples': len(s_em_y), 'n_bubbles': len(i_em),
+        'sample': {'em_y': s_em_y, 'bu_y': s_bu_y, 'em_mag': s_em_m,
+                   'bu_mag': s_bu_m, 'ratio': ratio, 'coverage': cat(cov)},
+        'bubble': {'imp_em': i_em, 'imp_bu': i_bu, 'rise': dy, 'y_end': ye},
+        'em_median_mag': float(np.median(s_em_m)),
+        'bu_median_mag': float(np.median(s_bu_m)),
+        'ratio_median': float(np.nanmedian(ratio)),
+        'em_exceeds_buoyancy': float((s_em_m > s_bu_m).mean()),
+        'em_up_fraction_samples': float((s_em_y > 0).mean()),
+        'em_up_fraction_bubbles': float((i_em > 0).mean()),
+        'impulse_ratio_median': float(np.nanmedian(
+            np.divide(i_em, i_bu, out=np.full_like(i_em, np.nan), where=i_bu > 0))),
+        'rose_fraction': float((dy > 0).mean()),
+        'median_rise_um': float(np.median(dy)),
+        'reached_surface': float((ye > surface_um - 2).mean()),
+        'corr_impulse_rise': float(np.corrcoef(i_em[good], dy[good])[0, 1])
+              if good.sum() > 2 else float('nan'),
+    }
+
+
+def print_expulsion_table(b):
+    """The table the expulsion question is actually decided on."""
+    W = 74
+    print('\n' + '=' * W)
+    print('EXPULSION BUDGET - does the exclusion force lift bubbles out?')
+    print('=' * W)
+    print(f"{'samples':>34}: {b['n_samples']:,}   bubbles: {b['n_bubbles']:,}")
+
+    print(f"\n  MAGNITUDE - is it big enough to matter?")
+    print(f"{'median |F| exclusion (EM)':>34}: {b['em_median_mag']:.3e} N")
+    print(f"{'median |F| buoyancy':>34}: {b['bu_median_mag']:.3e} N")
+    print(f"{'median ratio |EM|/|buoy|':>34}: {b['ratio_median']:.1f}x")
+    print(f"{'samples where EM exceeds buoy':>34}: {b['em_exceeds_buoyancy']:.1%}")
+
+    print(f"\n  DIRECTION - does it point toward the surface (+y)?")
+    print(f"{'samples with EM pushing UP':>34}: {b['em_up_fraction_samples']:.1%}")
+    print(f"{'bubbles w/ net UPWARD EM impulse':>34}: {b['em_up_fraction_bubbles']:.1%}")
+    print(f"{'median EM/buoyancy impulse':>34}: {b['impulse_ratio_median']:+.1f}"
+          f"   (negative = opposes buoyancy)")
+
+    print(f"\n  OUTCOME - where did the bubbles actually go?")
+    print(f"{'bubbles that rose':>34}: {b['rose_fraction']:.1%}")
+    print(f"{'median net rise':>34}: {b['median_rise_um']:+.1f} um")
+    print(f"{'ended at/above the free surface':>34}: {b['reached_surface']:.1%}")
+    print(f"{'corr(EM vertical impulse, rise)':>34}: {b['corr_impulse_rise']:+.3f}")
+
+    up = b['em_up_fraction_bubbles']
+    verdict = ('HELPS expulsion' if up > 0.6 else
+               'OPPOSES expulsion' if up < 0.4 else 'is directionally neutral')
+    print(f"\n  => the exclusion force {verdict}: it is "
+          f"{b['ratio_median']:.0f}x buoyancy in magnitude but pushes up for "
+          f"only {up:.0%} of bubbles.")
+    print('=' * W)
+
+
+def add_expulsion_pages(pdf, b, colors, label=''):
+    """Three pages: magnitude, direction, outcome."""
+    import matplotlib.pyplot as plt
+    s, bb = b['sample'], b['bubble']
+    c_em, c_bu = colors[1], colors[0]
+
+    def finish(fig):
+        fig.tight_layout(); pdf.savefig(fig); plt.close(fig)
+
+    # Page A - magnitude
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4.6))
+    fig.suptitle(f'Force magnitude: exclusion vs buoyancy  {label}', fontsize=13)
+    pos = lambda a: a[np.isfinite(a) & (a > 0)]
+    bins = np.logspace(-13, -5, 60)
+    ax[0].hist(pos(s['em_mag']), bins=bins, alpha=.65, color=c_em, label='exclusion (EM)')
+    ax[0].hist(pos(s['bu_mag']), bins=bins, alpha=.65, color=c_bu, label='buoyancy')
+    ax[0].set_xscale('log'); ax[0].set_xlabel('|F|  (N)'); ax[0].set_ylabel('samples')
+    ax[0].legend(); ax[0].set_title('The EM force dominates the budget')
+    r = pos(s['ratio'])
+    ax[1].hist(r, bins=np.logspace(-1, 4, 60), color=c_em, alpha=.8)
+    ax[1].axvline(1, color='k', ls='--', lw=1)
+    ax[1].set_xscale('log'); ax[1].set_xlabel('|F_EM| / |F_buoyancy|')
+    ax[1].set_ylabel('samples')
+    ax[1].set_title(f"median {b['ratio_median']:.0f}x; "
+                    f"EM larger in {b['em_exceeds_buoyancy']:.0%} of samples")
+    finish(fig)
+
+    # Page B - direction
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4.6))
+    fig.suptitle(f'Force direction on the expulsion axis (+y = toward surface)  {label}',
+                 fontsize=13)
+    v = s['em_y'][np.isfinite(s['em_y'])]
+    lim = np.percentile(np.abs(v), 99)
+    ax[0].hist(np.clip(v, -lim, lim), bins=80, color=c_em, alpha=.85)
+    ax[0].axvline(0, color='k', lw=1)
+    ax[0].set_xlabel('EM force, y-component  (N)'); ax[0].set_ylabel('samples')
+    ax[0].set_title(f"pushes UP in only {b['em_up_fraction_samples']:.0%} of samples")
+    i = bb['imp_em'][np.isfinite(bb['imp_em'])]
+    lim = np.percentile(np.abs(i), 99)
+    ax[1].hist(np.clip(i, -lim, lim), bins=60, color=c_em, alpha=.85)
+    ax[1].axvline(0, color='k', lw=1)
+    ax[1].set_xlabel('net vertical EM impulse per bubble  (N·s)')
+    ax[1].set_ylabel('bubbles')
+    ax[1].set_title(f"net UPWARD for {b['em_up_fraction_bubbles']:.0%} of bubbles")
+    finish(fig)
+
+    # Page C - outcome
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4.6))
+    fig.suptitle(f'Outcome: where the bubbles actually went  {label}', fontsize=13)
+    ax[0].hist(bb['rise'], bins=60, color=c_bu, alpha=.85)
+    ax[0].axvline(0, color='k', lw=1)
+    ax[0].set_xlabel('net vertical displacement  (µm, + = toward surface)')
+    ax[0].set_ylabel('bubbles')
+    ax[0].set_title(f"{b['rose_fraction']:.0%} rose; median "
+                    f"{b['median_rise_um']:+.0f} µm")
+    ok = np.isfinite(bb['imp_em']) & np.isfinite(bb['rise'])
+    ax[1].scatter(bb['imp_em'][ok], bb['rise'][ok], s=8, alpha=.35, color=c_em)
+    ax[1].axhline(0, color='k', lw=.8); ax[1].axvline(0, color='k', lw=.8)
+    ax[1].set_xlabel('net vertical EM impulse  (N·s)')
+    ax[1].set_ylabel('net rise  (µm)')
+    ax[1].set_title(f"r = {b['corr_impulse_rise']:+.2f} - trajectories are set "
+                    f"by melt advection, not EM")
+    ax[1].set_xscale('symlog', linthresh=1e-14)
+    finish(fig)
 
 
 if __name__ == '__main__':

@@ -280,8 +280,13 @@ void Foam::PoreForceReport<CloudType>::postEvolve
         const vector Uc =
             (UPtr && celli >= 0) ? UPtr->primitiveField()[celli] : vector::zero;
 
-        // Net buoyancy including the bubble's own weight
-        const vector Fbuoy = V*(rhoc - p.rho())*g.value();
+        // Net buoyancy including the bubble's own weight.  Sign follows
+        // OpenFOAM's GravityForce, which is what actually moves the parcel:
+        // Su = mass*g*(1 - rhoc/rho) = V*g*(rho - rhoc).  Writing
+        // V*(rhoc - rho)*g instead - as this did until 2026-09-17 - reports a
+        // gas bubble in liquid metal as being pushed DOWNWARD, which inverts
+        // the one force whose direction is known a priori.
+        const vector Fbuoy = V*(p.rho() - rhoc)*g.value();
 
         const scalar Tcell =
             (TPtr && celli >= 0) ? TPtr->primitiveField()[celli] : 0.0;
