@@ -126,8 +126,18 @@ cloudFunctions
     poreForceReport
     {
         type            poreForceReport;
+
+        // One row per bubble per report, so the row count is
+        // nBubbles * nSteps/writeInterval.  This case runs at dt ~ 1.2e-8,
+        // i.e. ~83000 steps per millisecond, against a cloud that reaches
+        // ~1700 bubbles - so writeInterval 1 is ~1.4e8 rows, tens of GB, and
+        // an fwrite on every rank on every step.  25 still resolves a bubble
+        // crossing a decomposition plane in several samples.
+        //
+        // Raise it for a production sweep, or use writeControl writeTime to
+        // tie the CSV to the field write cadence instead.
         writeControl    timeStep;
-        writeInterval   1;
+        writeInterval   25;
         exclusionCoeff  -1.5;
         useSphereAverage true;
         J               J_MHD;
