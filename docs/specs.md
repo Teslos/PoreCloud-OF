@@ -265,9 +265,47 @@ This is a reporting fix, not a physics fix. A real one needs remote stencil valu
 `PoreExtract.C:322-382` does for its CCL). Until then: `useSphereAverage false` is exact in
 parallel, and sphere averaging is for serial or coverage-filtered work.
 
-**Not yet checked:** trajectory agreement over a long run, and whether truncation shows up
-as a visible discontinuity in force as a bubble crosses a decomposition plane. Both need a
-production-length run.
+### 5.6 Production run — truncation is a visible force discontinuity
+
+The production-length run that §5.5 called for: 0.2 T azimuthal case, t = 0.001 → 0.002
+(the dict's full 1 ms injection window), 18 scotch ranks, 8885 s wall, 8600 steps,
+reported every 25 steps. 396 snapshots, 457203 rows. 2892 parcels at the end — 2315 still
+active in liquid, 577 entrapped as pores by the solidification front (20%). No duplicated
+parcel ids in any snapshot, so the injector fix of §5.5 holds at scale.
+
+Coverage over all 457203 samples: mean 0.877, median 0.962, min 0.098, with **34.1% below
+the 0.89 serial floor**. That independently reproduces the 38% truncation fraction §5.5
+measured from 181 fixed bubbles, now from a freely-moving sample 2500× larger — so the
+one-third figure is a property of the decomposition, not of that particular bubble set.
+
+**The open question from §5.5 is answered: yes, truncation is visible along a trajectory.**
+Comparing consecutive samples of the same active bubble, the relative change in |F| is
+4.1× larger when its coverage jumps (>0.10) than when coverage is steady (<0.01). That
+raw ratio is confounded — a bubble whose stencil changed also moved further, so its fields
+genuinely changed more. Controlling for the distance actually travelled between samples:
+
+\verbatim
+  displacement    steady n   median    jump n   median    ratio
+    < 0.05 dx        6168     2.32%       151   11.12%     4.8x
+    0.05-0.2 dx     40716     3.97%      4742   10.68%     2.7x
+    0.2-0.5 dx      42845     8.24%     16875   14.11%     1.7x
+    0.5-1 dx        20905    18.14%     19093   28.44%     1.6x
+    > 1 dx          12466    45.47%     28148   65.37%     1.4x
+\endverbatim
+
+The effect survives the control and is strongest exactly where it should be. A bubble that
+moved less than 1/20 of a cell should see almost no change in force — and it does not, when
+its stencil changes: 11.1% against 2.3%. That is the artefact, cleanly separated from
+physical field variation. The ratio decays as displacement grows because real field
+variation increasingly dominates the same fixed stencil error.
+
+So the discontinuity is real and sharp, not a slow bias: a bubble crossing a decomposition
+plane takes a step change in reported force. For trajectory work this matters more than the
+7% mean of §5.5 suggests, because the error is not smooth in time.
+
+**Still not checked:** serial-vs-parallel trajectory agreement at production length. A
+serial run of this window is ~18× the wall time, so it needs to be worth the machine.
+
 
 ## 6. Deliberate omissions
 
@@ -309,11 +347,11 @@ up holding a null stream.
   Jul 14 `poreTracker1_pores.csv`. Those results predate the Aug 21 merge (`cd729daf`), so
   that case needs re-running on the current binary first to get a clean baseline. This is
   the test that would bound the finite-size approximation empirically.
-- **Parallel verification** (plan test 6) is done for injection, CSV path and force
-  accuracy — see §5.5. Two bugs were found and fixed. What remains untested under MPI is
-  trajectory agreement over a production-length run, and whether `sphereAverage`
-  truncation is visible as a discontinuity in force as a bubble crosses a decomposition
-  plane.
+- **Parallel verification** (plan test 6) is done — §5.5 for injection, CSV path and force
+  accuracy, §5.6 for the production-length run. Two bugs found and fixed. Truncation is
+  confirmed as a step change in force at decomposition planes, not a smooth bias. The one
+  remaining piece is serial-vs-parallel trajectory agreement at production length, which
+  costs ~18× the wall time of the parallel run.
 - **Remote stencil values for `sphereAverage`** (§5.5). Without them, sphere-averaged
   sampling in parallel is accurate only for bubbles above the serial coverage floor. This
   is the one known correctness gap in the library.
