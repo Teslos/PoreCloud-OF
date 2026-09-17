@@ -322,6 +322,52 @@ def test_expulsion_ratio_is_magnitude_not_signed():
     assert b['em_up_fraction_samples'] == 0.0   # ... while pointing the wrong way
 
 
+# ── VTK export ───────────────────────────────────────────────────────────────
+
+def test_vtk_series_is_wellformed_and_carries_the_csv_fields():
+    """The .vtp must parse as XML and expose every array ParaView colours by."""
+    import tempfile, xml.etree.ElementTree as ET
+    sys.path.insert(0, str(Path(__file__).parent))
+    import poreCloudToVTK as v
+
+    d = Path(tempfile.mkdtemp())
+    csv_path = d / 'poreCloud_pores.csv'
+    write_csv(csv_path, make_rows([
+        {'PoreID': str(p), 'Time': f'{i * 1e-6}', 'Cx_m': '1e-4',
+         'Cy_m': '2e-4', 'Cz_m': '3e-4', 'Fy_N': '-1e-9', 'Coverage': '0.75'}
+        for p in range(3) for i in range(4)
+    ]))
+    manifest, n_times, n_pts = v.write_series(csv_path, d / 'viz', buoy_sign=1)
+    assert n_times == 4 and n_pts == 12
+
+    root = ET.parse(manifest).getroot()          # manifest parses
+    assert len(root.find('Collection')) == 4
+
+    vtp = ET.parse(d / 'viz' / 'pores_00000.vtp').getroot()
+    piece = vtp.find('.//Piece')
+    assert piece.get('NumberOfPoints') == '3'
+    names = {a.get('Name') for a in piece.find('PointData')}
+    for expected in ('F_exclusion', 'F_buoyancy', 'Coverage', 'Active',
+                     'F_exclusion_mag', 'T_K'):
+        assert expected in names, f'{expected} missing from {names}'
+
+
+def test_vtk_export_applies_the_buoyancy_sign_flip():
+    import tempfile, xml.etree.ElementTree as ET
+    sys.path.insert(0, str(Path(__file__).parent))
+    import poreCloudToVTK as v
+
+    d = Path(tempfile.mkdtemp())
+    csv_path = d / 'p.csv'
+    write_csv(csv_path, make_rows([
+        {'PoreID': '1', 'Time': f'{i * 1e-6}', 'Fbuoyy': '-1e-9'} for i in range(2)
+    ]))
+    v.write_series(csv_path, d / 'viz', buoy_sign=-1)
+    vtp = ET.parse(d / 'viz' / 'pores_00000.vtp').getroot()
+    arr = [a for a in vtp.find('.//PointData') if a.get('Name') == 'F_buoyancy'][0]
+    assert float(arr.text.split()[1]) > 0, 'flip not applied to F_buoyancy'
+
+
 # ── end-to-end ───────────────────────────────────────────────────────────────
 
 def test_load_rows_rejects_pre_coverage_schema(tmp_path=None):
