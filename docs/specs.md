@@ -205,6 +205,70 @@ class of uncertainty.
 *(Stated as an arithmetic observation. The viscosity actually used for the quoted figure
 is not recorded in the summary, so this is a reconciliation, not an accusation.)*
 
+### 5.5 Parallel verification — 18 ranks
+
+Run on the 0.2 T azimuthal melt-pool case, `scotch`, 18 subdomains, against the identical
+serial case. What passed outright:
+
+- **CSV lands in the case root**, not `processor0/` — the `globalPath()` fix of §7.1 holds
+  under MPI.
+- **No lost or duplicated bubbles.** 181 injected in both runs; `PoreID` unique; the
+  gathered list is identically ordered on every rank.
+- **The solver fields agree.** `T` and `epsilon1` sampled at the host cell match serial to
+  ~1e-4%, so any force difference is the library's, not the flow solution's.
+
+Two real bugs surfaced and were fixed here rather than in production:
+
+1. **The injector max-reduced the cell indices.** `injectorCells_`/`TetFaces_`/`TetPts_`
+   are *local* mesh indices and `validInjection()` keys on them being `-1` on non-owning
+   ranks. Reducing them made every rank claim every bubble — injecting each one 18 times at
+   unrelated cells. `CellZoneInjection` deliberately does not reduce them; neither do we
+   now. Velocity and diameter follow the same rule, drawn by the owning rank.
+2. **The `maxParcels` cap truncated by prefix.** `setSize(n)` keeps the first `n`, and the
+   gathered list is rank-ordered, so the whole quota was filled from the lowest ranks —
+   biasing injection toward whatever region those ranks own. Replaced with even striding.
+
+### What does not hold in parallel: sphere-averaged sampling
+
+`fvMesh::cellCells()` does not cross a `processorPolyPatch`, so a bubble straddling a
+decomposition plane samples only its local side. 181 bubbles at identical fixed positions
+(d/dx 3.1–5.4, ~50 cells per stencil), matched one-to-one to within 1e-11 m:
+
+| | mean coverage | min coverage |
+|---|---|---|
+| serial | 0.980 | 0.893 |
+| 18 ranks | 0.893 | 0.317 |
+
+| parallel coverage | n | mean \|dF\|/F | max |
+|---|---|---|---|
+| ≥ 0.89 (serial floor) | 130 | 1.79% | 9.14% |
+| 0.70 – 0.89 | 24 | 13.05% | 71.76% |
+| 0.50 – 0.70 | 21 | 9.45% | 29.90% |
+| < 0.50 | 6 | 31.20% | 75.08% |
+| **all** | **181** | **5.15%** | **75.08%** |
+
+A control run with centroid sampling — no stencil at all — differs by only 0.54% mean
+(15.1% max), which is the `phiE` Poisson solve converging differently under decomposition.
+That isolates the remaining error as truncation, not round-off.
+
+**The mitigation, and its limit.** `sphereAverage` now returns the collected volume and
+the reporter writes `coverage()` per bubble as a `Coverage` column. In serial nothing fell
+below 0.89 — that floor is cell centres failing to tile a sphere exactly, not truncation —
+so a parallel bubble materially below it was cut by a processor boundary. Discarding those
+keeps 72% of the sample and restores serial-like accuracy: mean 5.15% → 1.79%, max 75% →
+9.1%. The floor is resolution dependent; take it from a serial run of the same case rather
+than assuming 0.89. `LeenovKolinForce` emits a `WarningInFunction` at construction when
+`useSphereAverage` is on in a decomposed run.
+
+This is a reporting fix, not a physics fix. A real one needs remote stencil values, via
+`mapDistribute` (as `extendedCentredCellToCellStencil` does) or a layered halo exchange (as
+`PoreExtract.C:322-382` does for its CCL). Until then: `useSphereAverage false` is exact in
+parallel, and sphere averaging is for serial or coverage-filtered work.
+
+**Not yet checked:** trajectory agreement over a long run, and whether truncation shows up
+as a visible discontinuity in force as a bubble crosses a decomposition plane. Both need a
+production-length run.
+
 ## 6. Deliberate omissions
 
 **Drag / added mass / lift are not broken out in the CSV.** They are evaluated inside
@@ -245,10 +309,12 @@ up holding a null stream.
   Jul 14 `poreTracker1_pores.csv`. Those results predate the Aug 21 merge (`cd729daf`), so
   that case needs re-running on the current binary first to get a clean baseline. This is
   the test that would bound the finite-size approximation empirically.
-- **Parallel verification** (plan test 6) has not been run: serial-vs-parallel trajectory
-  agreement, CSV landing in the case root, no lost/duplicated bubbles across processor
-  boundaries, and whether `sphereAverage` truncation at decomposition planes is visible as
-  a discontinuity in force along a trajectory. The code paths are written for MPI
-  (`globalIndex` gather in the injector, `Pstream::gatherList` in the reporter) but are
-  untested under it.
+- **Parallel verification** (plan test 6) is done for injection, CSV path and force
+  accuracy — see §5.5. Two bugs were found and fixed. What remains untested under MPI is
+  trajectory agreement over a production-length run, and whether `sphereAverage`
+  truncation is visible as a discontinuity in force as a bubble crosses a decomposition
+  plane.
+- **Remote stencil values for `sphereAverage`** (§5.5). Without them, sphere-averaged
+  sampling in parallel is accurate only for bubbles above the serial coverage floor. This
+  is the one known correctness gap in the library.
 - Two-way coupling, via the `fvOptions(rho, U)` hook already present in `UEqn.H`.

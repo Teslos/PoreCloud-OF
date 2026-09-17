@@ -68,6 +68,26 @@ void Foam::LeenovKolinForce<CloudType>::cacheFields(const bool store)
         {
             BFieldPtr_.reset(new poreCloud::magneticField(mesh));
             BFieldPtr_->info();
+
+            if (useSphereAverage_ && UPstream::parRun())
+            {
+                WarningInFunction
+                    << "Sphere-averaged sampling in a decomposed run."  << nl
+                    << "    fvMesh::cellCells() does not cross a processor"
+                    << " boundary, so a bubble straddling one samples only its"
+                    << " local side." << nl
+                    << "    Measured on the 0.2T azimuthal case at 18 ranks:"
+                    << " force error mean 5.2%, max 75% over all bubbles."
+                    << nl
+                    << "    The Coverage column in the poreForceReport CSV is"
+                    << " the fraction of each bubble's volume actually"
+                    << " sampled.  Discard bubbles below the coverage floor of"
+                    << " a SERIAL run of the same case (0.89 for that case)"
+                    << " and the error returns to 1.8% mean, 9.1% max." << nl
+                    << "    For quantitative force work, filter on it or run"
+                    << " serially." << nl
+                    << "    See docs/specs.md." << nl;
+            }
         }
 
         // laserbeamFoam's functionObjects fire at the top of the time loop,

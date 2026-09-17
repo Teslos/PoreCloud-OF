@@ -162,7 +162,7 @@ void Foam::PoreForceReport<CloudType>::openCSV()
             << "Ux,Uy,Uz,d_m,dOverDx,Active,"
             << "Uslipx,Uslipy,Uslipz,"
             << "Fbuoyx,Fbuoyy,Fbuoyz,"
-            << "T_K,epsilon1"
+            << "T_K,epsilon1,Coverage"
             << std::endl;
     }
 
@@ -242,11 +242,14 @@ void Foam::PoreForceReport<CloudType>::postEvolve
         // Lagrangian analogue of PoreTracker's volume sum.
         vector Fem(Zero);
         label nCells = 1;
+        scalar cover = 1.0;
 
         if (JPtr && BFieldPtr_->active() && celli >= 0)
         {
             label nJ = 1;
             label nB = 1;
+            scalar sumVJ = 0;
+            scalar sumVB = 0;
 
             // Radius zero collapses sphereAverage to the host-cell value, so
             // the two sampling modes share one code path.
@@ -254,15 +257,21 @@ void Foam::PoreForceReport<CloudType>::postEvolve
 
             const vector J0 = poreCloud::sphereAverage
             (
-                mesh, JPtr->primitiveField(), celli, pos, aSample, nJ
+                mesh, JPtr->primitiveField(), celli, pos, aSample, nJ, sumVJ
             );
             const vector B = poreCloud::sphereAverage
             (
-                mesh, BFieldPtr_->B().primitiveField(), celli, pos, aSample, nB
+                mesh, BFieldPtr_->B().primitiveField(), celli, pos, aSample,
+                nB, sumVB
             );
 
             Fem = exclusionCoeff_*V*(J0 ^ B);
             nCells = nJ;
+
+            if (useSphereAverage_)
+            {
+                cover = poreCloud::coverage(sumVJ, a);
+            }
         }
 
         const scalar rhoc =
@@ -308,7 +317,7 @@ void Foam::PoreForceReport<CloudType>::postEvolve
         local.append(Tcell);
         local.append(eps);
         local.append(scalar(nCells));
-        local.append(0.0);                  // reserved
+        local.append(cover);
         local.append(0.0);                  // reserved
     }
 
@@ -359,7 +368,8 @@ void Foam::PoreForceReport<CloudType>::postEvolve
                 << label(r[14]) << ','           // Active
                 << r[15] << ',' << r[16] << ',' << r[17] << ','
                 << r[18] << ',' << r[19] << ',' << r[20] << ','
-                << r[21] << ',' << r[22]
+                << r[21] << ',' << r[22] << ','
+                << r[24]                         // Coverage
                 << '\n';
         }
     }

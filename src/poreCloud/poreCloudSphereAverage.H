@@ -41,11 +41,50 @@ Description
       - The caller multiplies by the bubble's own analytic volume
         V = 4/3 pi a^3, so the product equals the integral while remaining
         independent of how many cells happened to be collected.
-      - It degrades gracefully across processor boundaries.  fvMesh::cellCells()
-        does not cross a processorPolyPatch, so the walk truncates at the local
-        mesh; normalising by the volume actually collected keeps the result a
-        correct average over the visible part instead of silently losing a
-        fraction of the force.
+      - Normalising by the volume actually collected keeps the result an
+        average over the cells that WERE seen, rather than silently losing a
+        fraction of the force outright.
+
+    \heading Parallel limitation - measured, not hypothetical
+
+    fvMesh::cellCells() does not cross a processorPolyPatch, so in a decomposed
+    run the walk stops at a subdomain boundary and a bubble straddling one
+    samples only its local side.  Normalising bounds the damage but does not
+    remove it: the sampled region is genuinely smaller and differently centred.
+
+    Measured on the 0.2 T azimuthal melt-pool case: 181 bubbles at identical
+    fixed positions (d/dx 3.1-5.4, ~50 cells per stencil), serial vs 18 ranks
+    (scotch), matched one-to-one to within 1e-11 m.
+
+    \verbatim
+      coverage           serial   mean 0.980   min 0.893
+                       18 ranks   mean 0.893   min 0.317
+
+      |dF|/F by parallel coverage      n      mean      max
+        >= 0.89  (serial floor)      130     1.79%    9.14%
+        0.70 - 0.89                   24    13.05%   71.76%
+        0.50 - 0.70                   21     9.45%   29.90%
+        <  0.50                        6    31.20%   75.08%
+      all bubbles                    181     5.15%   75.08%
+
+      control: centroid sampling, no stencil    0.54%   15.11%
+    \endverbatim
+
+    The control isolates the cause: with no stencil at all the serial/parallel
+    difference is 0.5% (the phiE Poisson solve converging differently under
+    decomposition), so the rest is truncation.
+
+    The filter that follows from this: in serial no bubble fell below coverage
+    0.89 - that is the floor set by cell centres not tiling a sphere exactly,
+    at this resolution - so a parallel bubble materially below it has been cut
+    by a processor boundary rather than by discretisation.  Discarding those
+    keeps 72% of the sample and brings the error back to serial-like levels,
+    mean 5.15% -> 1.79%, max 75% -> 9.1%.  Note the floor is resolution
+    dependent: take it from a serial run of the same case, do not assume 0.89.
+
+    A proper fix needs remote stencil values, via mapDistribute (as
+    extendedCentredCellToCellStencil does) or a layered halo exchange (as
+    PoreExtract.C:322-382 does for its CCL).
       - When the radius falls below one cell it reduces exactly to the host
         cell value, so the same code path is valid for sub-grid bubbles.
 
@@ -63,6 +102,7 @@ SourceFiles
 #include "fvMesh.H"
 #include "DynamicList.H"
 #include "bitSet.H"
+#include "mathematicalConstants.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -84,6 +124,9 @@ static constexpr label maxSphereCells = 20000;
 //  \param centre   sphere centre, i.e. the parcel position
 //  \param radius   sphere radius, i.e. the bubble radius
 //  \param nCells   [out] number of cells collected
+//  \param sumV     [out] total volume of the cells collected.  Compare with
+//                  the analytic sphere volume to detect a truncated stencil -
+//                  see coverage() below.
 //
 //  \return volume-weighted mean; the host cell value if radius is sub-cell.
 template<class Type>
@@ -94,10 +137,12 @@ Type sphereAverage
     const label celli,
     const point& centre,
     const scalar radius,
-    label& nCells
+    label& nCells,
+    scalar& sumV
 )
 {
     nCells = 0;
+    sumV = 0;
 
     if (celli < 0 || celli >= mesh.nCells())
     {
@@ -112,6 +157,7 @@ Type sphereAverage
     if (radius <= SMALL)
     {
         nCells = 1;
+        sumV = mesh.V()[celli];
         return fld[celli];
     }
 
@@ -129,7 +175,6 @@ Type sphereAverage
     queue.append(celli);
 
     Type sumVf = Zero;
-    scalar sumV = 0;
 
     // Index-based BFS; queue grows in place (same idiom as PoreExtract::localCCL)
     for (label qi = 0; qi < queue.size(); ++qi)
@@ -160,10 +205,45 @@ Type sphereAverage
     if (sumV <= VSMALL)
     {
         nCells = 1;
+        sumV = V[celli];
         return fld[celli];
     }
 
     return sumVf/sumV;
+}
+
+
+//- Convenience overload for callers that do not need the collected volume.
+template<class Type>
+Type sphereAverage
+(
+    const fvMesh& mesh,
+    const Field<Type>& fld,
+    const label celli,
+    const point& centre,
+    const scalar radius,
+    label& nCells
+)
+{
+    scalar sumV = 0;
+    return sphereAverage(mesh, fld, celli, centre, radius, nCells, sumV);
+}
+
+
+//- Fraction of the bubble's analytic volume actually covered by the stencil.
+//
+//  Below 1 the walk was cut short - by a domain boundary, or (the case that
+//  matters) by a processor boundary, since fvMesh::cellCells() does not cross a
+//  processorPolyPatch.  A decomposed run therefore samples a smaller region
+//  than the same bubble would sample in serial, and the sampled average is
+//  biased accordingly.  Reported per bubble so affected samples can be
+//  identified and filtered rather than silently trusted.
+inline scalar coverage(const scalar sumV, const scalar radius)
+{
+    const scalar Vsphere =
+        4.0/3.0*constant::mathematical::pi*radius*radius*radius;
+
+    return Vsphere > VSMALL ? min(scalar(1), sumV/Vsphere) : scalar(1);
 }
 
 

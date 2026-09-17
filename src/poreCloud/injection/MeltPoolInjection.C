@@ -48,6 +48,7 @@ void Foam::MeltPoolInjection<CloudType>::generatePositions(const scalar dt)
     DynamicList<label> injectorTetFaces(256);
     DynamicList<label> injectorTetPts(256);
     DynamicList<vector> velocities(256);
+    DynamicList<scalar> diameters(256);
 
     // Fractional carry-over, so a rate that yields far less than one bubble
     // per cell per step still produces the correct long-run count instead of
@@ -121,15 +122,28 @@ void Foam::MeltPoolInjection<CloudType>::generatePositions(const scalar dt)
             (
                 haveU0_ || !UPtr ? U0_ : UPtr->primitiveField()[celli]
             );
+
+            // Drawn here, by the processor that owns the position, so each
+            // bubble's size is sampled exactly once.
+            diameters.append(sizeDistribution_->sample());
         }
     }
 
     fractionalCarry_ = newParticlesTotal - addParticlesTotal;
 
-    // Parallel: gather every processor's positions onto every processor, so
-    // the parcelI indexing in inject() is globally consistent.  Cell/tet ids
-    // stay -1 on processors that do not own the position, which is what
-    // validInjection() keys on.
+    // Parallel handling, following CellZoneInjection: the POSITIONS are
+    // gathered onto every processor so that the parcelI indexing used by
+    // InjectionModel::inject() is globally consistent and every rank agrees on
+    // how many parcels are being injected (parcelsToInject must be collective).
+    //
+    // The cell / tetFace / tetPt ids are deliberately NOT reduced.  They are
+    // LOCAL mesh indices, meaningless on any other rank, and validInjection()
+    // keys on them being -1 to decide that a position belongs to someone else.
+    // Reducing them would make every rank claim every bubble - injecting each
+    // one nProcs times, at unrelated cells.
+    //
+    // Velocities and diameters likewise stay local: inject() only calls
+    // setProperties() on the rank that owns the position.
     const label myProci = UPstream::myProcNo();
     globalIndex globalPositions(positions.size());
 
@@ -140,6 +154,7 @@ void Foam::MeltPoolInjection<CloudType>::generatePositions(const scalar dt)
     injectorTetFaces_.setSize(total, -1);
     injectorTetPts_.setSize(total, -1);
     velocities_.setSize(total, Zero);
+    diameters_.setSize(total, 0.0);
 
     SubList<vector>(positions_, globalPositions.range(myProci)) = positions;
     SubList<label>(injectorCells_, globalPositions.range(myProci)) =
@@ -149,22 +164,11 @@ void Foam::MeltPoolInjection<CloudType>::generatePositions(const scalar dt)
     SubList<label>(injectorTetPts_, globalPositions.range(myProci)) =
         injectorTetPts;
     SubList<vector>(velocities_, globalPositions.range(myProci)) = velocities;
+    SubList<scalar>(diameters_, globalPositions.range(myProci)) = diameters;
 
     if (UPstream::parRun())
     {
         Pstream::listReduce(positions_, minOp<point>());
-        Pstream::listReduce(injectorCells_, maxOp<label>());
-        Pstream::listReduce(injectorTetFaces_, maxOp<label>());
-        Pstream::listReduce(injectorTetPts_, maxOp<label>());
-        Pstream::listReduce(velocities_, maxOp<vector>());
-    }
-
-    // Diameters must be identical on every processor, and are drawn after the
-    // gather so that the RNG sequence does not have to match across ranks.
-    diameters_.setSize(total, 0.0);
-    forAll(diameters_, i)
-    {
-        diameters_[i] = sizeDistribution_->sample();
     }
 }
 
@@ -315,7 +319,39 @@ Foam::label Foam::MeltPoolInjection<CloudType>::parcelsToInject
     // Respect the safety cap
     if (nInjectedTotal_ + n > maxParcels_)
     {
-        n = max(label(0), maxParcels_ - nInjectedTotal_);
+        const label nKeep = max(label(0), maxParcels_ - nInjectedTotal_);
+
+        if (nKeep < n)
+        {
+            // Keep nKeep entries spread evenly through the gathered list, not
+            // its first nKeep.  The list is ordered by rank (globalIndex
+            // layout), so a prefix truncation fills the entire quota from the
+            // lowest ranks and biases injection towards whatever part of the
+            // melt pool those ranks happen to own.  Even striding draws
+            // proportionally from every rank, and is pure integer arithmetic
+            // on values every rank already agrees on, so the parcelI indexing
+            // stays collectively consistent.
+            label k = 0;
+            for (label i = 0; i < n; ++i)
+            {
+                const long long lo = static_cast<long long>(i)*nKeep/n;
+                const long long hi = static_cast<long long>(i + 1)*nKeep/n;
+
+                if (hi > lo)
+                {
+                    positions_[k] = positions_[i];
+                    injectorCells_[k] = injectorCells_[i];
+                    injectorTetFaces_[k] = injectorTetFaces_[i];
+                    injectorTetPts_[k] = injectorTetPts_[i];
+                    diameters_[k] = diameters_[i];
+                    velocities_[k] = velocities_[i];
+                    ++k;
+                }
+            }
+
+            n = k;
+        }
+
         positions_.setSize(n);
         injectorCells_.setSize(n);
         injectorTetFaces_.setSize(n);

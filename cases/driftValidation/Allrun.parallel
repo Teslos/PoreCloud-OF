@@ -1,0 +1,11 @@
+#!/bin/sh
+cd "${0%/*}" || exit
+. "${WM_PROJECT_DIR:?Source an OpenFOAM environment first}/bin/tools/RunFunctions"
+
+NP=$(foamDictionary -entry numberOfSubdomains -value system/decomposeParDict)
+
+rm -rf 0 && cp -r initial 0
+runApplication blockMesh
+runApplication decomposePar
+runParallel -np "$NP" $(getApplication)
+runApplication reconstructPar
