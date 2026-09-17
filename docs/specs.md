@@ -269,9 +269,12 @@ parallel, and sphere averaging is for serial or coverage-filtered work.
 
 The production-length run that §5.5 called for: 0.2 T azimuthal case, t = 0.001 → 0.002
 (the dict's full 1 ms injection window), 18 scotch ranks, 8885 s wall, 8600 steps,
-reported every 25 steps. 396 snapshots, 457203 rows. 2892 parcels at the end — 2315 still
-active in liquid, 577 entrapped as pores by the solidification front (20%). No duplicated
-parcel ids in any snapshot, so the injector fix of §5.5 holds at scale.
+reported every 25 steps. 396 snapshots, 457203 rows. 2892 parcels at the end, 2315 still
+active in liquid and 577 flagged captured. No duplicated parcel ids in any snapshot, so the
+injector fix of §5.5 holds at scale.
+
+**That 577 is not an entrapment count** — see §5.7. It is an artefact of irreversible
+capture, and should not be read as a porosity prediction.
 
 Coverage over all 457203 samples: mean 0.877, median 0.962, min 0.098, with **34.1% below
 the 0.89 serial floor**. That independently reproduces the 38% truncation fraction §5.5
@@ -306,6 +309,45 @@ plane takes a step change in reported force. For trajectory work this matters mo
 **Still not checked:** serial-vs-parallel trajectory agreement at production length. A
 serial run of this window is ~18× the wall time, so it needs to be worth the machine.
 
+
+### 5.7 The capture count is an artefact of `allowRemelt false`
+
+Of the 577 parcels the production run flagged as captured, **569 (99%) are sitting in metal
+that is liquid again afterwards**, and 77% of all frozen samples are at ε₁ ≥ 0.9 — not
+marginally molten, fully molten. Capture is irreversible by default, so the first excursion
+below `captureThreshold 0.5` freezes a bubble for the rest of the run no matter what the
+front does next.
+
+The crossings are marginal. Parcels freeze at ε₁ = 0.493, 0.547, 0.549 and then recover
+within one or two samples:
+
+\verbatim
+  parcel 1      t=1496 us  active=1  eps=0.823
+                t=1499 us  active=0  eps=0.493   <- frozen here
+                t=1503 us  active=0  eps=0.525
+                t=1506 us  active=0  eps=0.549   <- liquid again, still frozen
+\endverbatim
+
+Across the 577, the median is 4 of the 7 samples around capture below threshold, and 11%
+are single-sample dips. So this is a front that oscillates about ε₁ = 0.5 at the trailing
+edge of a moving pool, not a front that sweeps past once.
+
+A bubble that real metal solidifies around and then re-melts is released. `allowRemelt
+false` cannot represent that, so for a moving or growing pool it over-counts entrapment
+badly — here by roughly two orders of magnitude relative to whatever the true count is.
+**`allowRemelt true` is the physical setting for this class of case**; `false` is only
+defensible when the front is known to advance monotonically past each bubble.
+
+Two things follow for the shipped dict, neither yet changed, because the right answer is a
+physics call rather than a plumbing one:
+
+  - `allowRemelt` should probably default to `true` for melt-pool cases.
+  - `captureThreshold 0.5` sits exactly where ε₁ oscillates. Capture would be far less
+    sensitive with hysteresis — freeze below 0.3, release above 0.7 — rather than one
+    threshold crossed in both directions.
+
+Note also that a parcel can be reported frozen at ε₁ ≥ 0.5 within a single step: capture
+fires in `postMove`, the CSV is written in `postEvolve`, and ε₁ is re-read in between.
 
 ## 6. Deliberate omissions
 
@@ -355,4 +397,6 @@ up holding a null stream.
 - **Remote stencil values for `sphereAverage`** (§5.5). Without them, sphere-averaged
   sampling in parallel is accurate only for bubbles above the serial coverage floor. This
   is the one known correctness gap in the library.
+- **Capture semantics** (§5.7): `allowRemelt` and a hysteresis band for `captureThreshold`,
+  without which the reported pore count is not a porosity prediction.
 - Two-way coupling, via the `fvOptions(rho, U)` hook already present in `UEqn.H`.
