@@ -1,0 +1,26 @@
+# wmake build products
+**/Make/linux*/
+**/lnInclude/
+log.*
+
+# OpenFOAM case output
+processor*/
+postProcessing/
+VTK/
+VTKs/
+*.foam
+*.csv
+cases/*/0/
+# time directories (keeps initial/ and constant/)
+cases/*/[1-9]*/
+cases/*/0.[0-9]*/
+cases/*/constant/polyMesh/
+
+# python / editor / OS
+__pycache__/
+*.pyc
+.venv/
+.vscode/
+.idea/
+*.swp
+.DS_Store

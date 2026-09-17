@@ -1,0 +1,5 @@
+#!/bin/sh
+cd "${0%/*}" || exit
+. "${WM_PROJECT_DIR:?Source an OpenFOAM environment first}/bin/tools/CleanFunctions"
+cleanCase
+rm -rf 0 *.csv

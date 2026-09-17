@@ -1,0 +1,100 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | foam-extend: Open Source CFD                    |
+|  \\    /   O peration     | Version:     4.0                                |
+|   \\  /    A nd           | Web:         http://www.foam-extend.org         |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+convertToMeters 1.0;
+
+// Domain: x=[0,500um] scan direction, y=[0,700um] depth (laser enters y_max going down), z=[0,500um] cross-scan width
+// No rotation needed: Y is vertical (largest dimension), laser enters from topWall (y_max) going downward
+
+vertices
+(
+    (0      0      0)
+    (200e-6 0      0)
+    (200e-6 200e-6 0)
+    (0      200e-6 0)
+    (0      0      200e-6)
+    (200e-6 0      200e-6)
+    (200e-6 200e-6 200e-6)
+    (0      200e-6 200e-6)
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) (25 25 25) simpleGrading (1 1 1)
+);
+
+edges
+(
+);
+
+boundary
+(
+    back
+    {
+        type patch;
+        faces
+        (
+            (0 4 7 3)
+        );
+    }
+    front
+    {
+        type patch;
+        faces
+        (
+            (1 2 6 5)
+        );
+    }
+    leftWall
+    {
+        type patch;
+        faces
+        (
+            (0 3 2 1)
+        );
+    }
+    rightWall
+    {
+        type patch;
+        faces
+        (
+            (4 5 6 7)
+        );
+    }
+    topWall
+    {
+        type patch;
+        faces
+        (
+            (3 7 6 2)
+        );
+    }
+    bottomWall
+    {
+        type wall;
+        faces
+        (
+            (1 5 4 0)
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+
+// ************************************************************************* //

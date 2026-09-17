@@ -1,0 +1,104 @@
+/*--------------------------------*- C++ -*----------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      poreCloudProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+//
+// Drift-validation configuration.
+//
+// Quiescent, uniformly molten metal; laser off; MHD off.  The only forces are
+// buoyancy and drag, so a bubble must approach the analytic Stokes terminal
+// velocity
+//
+//     v_term = (2/9) (rho_metal - rho_gas) g a^2 / mu
+//
+// which is the same balance, with f = (rho_m - rho_g) g, as the drift estimate
+// v_drift = 2 f a^2 / (9 mu) used in AZIMUTHAL_STUDY_SUMMARY.md section 5.
+// Reproducing it end-to-end is the acceptance test for the force/integration
+// path; see docs/specs.md.
+
+solution
+{
+    active          true;
+    coupled         false;
+    transient       yes;
+    cellValueSourceCorrection no;
+
+    maxCo           0.3;
+
+    interpolationSchemes
+    {
+        rho             cell;
+        U               cellPoint;
+        mu              cell;
+        J_MHD           cellPoint;
+        gradT           cellPoint;
+        DUcDt           cellPoint;
+    }
+
+    integrationSchemes
+    {
+        U               Euler;
+    }
+}
+
+constantProperties
+{
+    rho0            1.0;
+}
+
+subModels
+{
+    particleForces
+    {
+        gravity;                        // includes buoyancy: g (1 - rhoc/rho_p)
+        sphereDrag;                     // Schiller-Naumann; Stokes at low Re
+        virtualMass { Cvm 0.5; }        // essential: rhoc/rho_p ~ 2670
+    }
+
+    injectionModels
+    {
+        seed
+        {
+            type            meltPoolInjection;
+            massTotal       0;
+            SOI             0;
+            duration        1e-5;
+            parcelBasisType fixed;
+            nParticle       1;
+
+            rate            2.5e20;
+            alphaMin        0.5;
+            epsMin          0.5;
+            maxParcels      200;
+            U0              (0 0 0);
+
+            sizeDistribution
+            {
+                type            fixedValue;
+                fixedValueDistribution { value 35e-6; }
+            }
+        }
+    }
+
+    dispersionModel         none;
+    patchInteractionModel   none;
+    surfaceFilmModel        none;
+    stochasticCollisionModel none;
+}
+
+cloudFunctions
+{
+    poreForceReport
+    {
+        type            poreForceReport;
+        writeControl    timeStep;
+        writeInterval   20;
+    }
+}
+
+// ************************************************************************* //
