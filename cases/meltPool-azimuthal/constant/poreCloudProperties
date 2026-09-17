@@ -76,7 +76,17 @@ subModels
             parcelBasisType fixed;
             nParticle       1;
 
-            rate            1e15;
+            // Nucleation rate per unit LIQUID volume, per second - not per
+            // cell and not per run.  The expected count is rate*V_melt*T, so
+            // it has to be scaled against the pool this case actually forms:
+            // at t = 1 ms the 0.2 T azimuthal pool is 26876 cells of
+            // 6.33e-16 m3 = 1.70e-11 m3.  Over the 1 ms injection window that
+            // gives ~1700 bubbles here, and more as the pool keeps growing.
+            //
+            // Was 1e15, which yields ~17 bubbles for the whole millisecond -
+            // enough to exercise the code path, far too few for statistics,
+            // and three orders short of ever reaching maxParcels.
+            rate            1e17;
             alphaName       alpha.metal;
             epsilonName     epsilon1;
             alphaMin        0.5;
