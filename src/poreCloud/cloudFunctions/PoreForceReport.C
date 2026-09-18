@@ -53,6 +53,11 @@ Foam::PoreForceReport<CloudType>::PoreForceReport
     BFieldPtr_(nullptr),
     csvPtr_(nullptr),
     stepCounter_(0),
+    voidFractionLimit_
+    (
+        this->coeffDict().template getOrDefault<scalar>("voidFractionLimit", 0.05)
+    ),
+    voidWarned_(false),
     birthPos_()
 {
     if (writeControl_ != "writeTime" && writeControl_ != "timeStep")
@@ -120,6 +125,8 @@ Foam::PoreForceReport<CloudType>::PoreForceReport
     BFieldPtr_(nullptr),
     csvPtr_(nullptr),
     stepCounter_(pfr.stepCounter_),
+    voidFractionLimit_(pfr.voidFractionLimit_),
+    voidWarned_(pfr.voidWarned_),
     birthPos_(pfr.birthPos_)
 {}
 
@@ -186,6 +193,77 @@ bool Foam::PoreForceReport<CloudType>::shouldWrite() const
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
+// Void fraction: the parcels' own volume against the liquid they sit in.
+//
+// The cloud is one-way coupled, so nothing in the solver reacts to how much
+// space the bubbles would take up - an injection rate three orders of
+// magnitude too high produces a clean-looking run whose parcels add up to
+// several times the volume of the pool.  This is the only place that would
+// notice, so it says so.
+//
+// Above the threshold the parcels stop being a bubble population and are only
+// a Monte Carlo sample of the force field - still valid for force statistics,
+// since one-way coupling makes each parcel an independent probe, but not a
+// porosity prediction and never a basis for switching coupling on.
+template<class CloudType>
+void Foam::PoreForceReport<CloudType>::reportVoidFraction
+(
+    const scalar VparcelSum,
+    const volScalarField* epsPtr
+)
+{
+    const fvMesh& mesh = this->owner().mesh();
+
+    scalar Vparcels = VparcelSum;
+    scalar Vliquid = 0;
+
+    if (epsPtr)
+    {
+        const scalarField& eps = epsPtr->primitiveField();
+        const scalarField& Vc = mesh.V();
+
+        forAll(eps, celli)
+        {
+            if (eps[celli] > 0.5)
+            {
+                Vliquid += Vc[celli];
+            }
+        }
+    }
+
+    reduce(Vparcels, sumOp<scalar>());
+    reduce(Vliquid, sumOp<scalar>());
+
+    if (Vliquid <= VSMALL)
+    {
+        return;
+    }
+
+    const scalar phi = Vparcels/Vliquid;
+
+    Info<< "    poreForceReport: void fraction "
+        << 100*phi << "% of the liquid volume" << nl;
+
+    if (phi > voidFractionLimit_ && !voidWarned_)
+    {
+        voidWarned_ = true;
+
+        WarningInFunction
+            << "Parcel volume is " << 100*phi << "% of the liquid volume,"
+            << " above the " << 100*voidFractionLimit_ << "% limit." << nl
+            << "    One-way coupling means nothing else will object, so this"
+            << " is the only warning you get." << nl
+            << "    The resolved-VoF runs this case is matched to sit at"
+            << " 0.8-2.5%.  Check injection rate and sizeDistribution in"
+            << " poreCloudProperties." << nl
+            << "    Force statistics stay valid - each parcel is an"
+            << " independent probe of the force field - but this is not a"
+            << " physical bubble population, and two-way coupling must not"
+            << " be enabled at this loading." << nl;
+    }
+}
+
+
 template<class CloudType>
 void Foam::PoreForceReport<CloudType>::postEvolve
 (
@@ -230,12 +308,15 @@ void Foam::PoreForceReport<CloudType>::postEvolve
     // the same reason.
     DynamicList<scalar> local(nFields*this->owner().size());
 
+    scalar VparcelSum = 0;
+
     for (const parcelType& p : this->owner())
     {
         const label celli = p.cell();
         const scalar d = p.d();
         const scalar a = 0.5*d;
         const scalar V = constant::mathematical::pi/6.0*d*d*d;
+        VparcelSum += p.nParticle()*V;
         const point pos = p.position();
 
         // Electromagnetic exclusion force over the bubble sphere - the
@@ -325,6 +406,8 @@ void Foam::PoreForceReport<CloudType>::postEvolve
         local.append(cover);
         local.append(0.0);                  // reserved
     }
+
+    reportVoidFraction(VparcelSum, epsPtr);
 
     // Gather to master
     List<List<scalar>> allData(Pstream::nProcs());

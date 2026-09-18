@@ -166,6 +166,13 @@ private:
         //- Step counter for the timeStep cadence
         label stepCounter_;
 
+        //- Parcel volume / liquid volume above which the cloud stops being a
+        //  physical bubble population.  Resolved-VoF runs sit at 0.8-2.5%.
+        scalar voidFractionLimit_;
+
+        //- Warn once, not every write.
+        bool voidWarned_;
+
         //- Birth positions, master only, keyed on PoreID
         std::map<label, point> birthPos_;
 
@@ -174,6 +181,15 @@ private:
 
         //- Open the CSV and write its header (master only)
         void openCSV();
+
+        //- Report parcel volume as a fraction of the liquid volume,
+        //  and warn once if it is implausible.  Nothing else can
+        //  notice: the cloud is one-way coupled.
+        void reportVoidFraction
+        (
+            const scalar VparcelSum,
+            const volScalarField* epsPtr
+        );
 
         //- Should a row be written at this call?
         bool shouldWrite() const;
