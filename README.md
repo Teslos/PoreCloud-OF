@@ -42,7 +42,7 @@ pores of a single radius, all at one instant, and required the mesh to resolve t
 
 ```bash
 source /usr/lib/openfoam/openfoam2506/etc/bashrc
-./Allwmake          # -> $FOAM_USER_LIBBIN/libPoreCloud.so
+./Allwmake          # -> $FOAM_USER_LIBBIN/libPoreCloud.so, $FOAM_USER_APPBIN/poreCloudReplay
 ./Allwclean
 ```
 
@@ -68,6 +68,48 @@ and copy `cases/meltPool-azimuthal/constant/poreCloudProperties` into your case'
 (`poreCloudProperties` by default).
 
 Output: `<caseDir>/poreCloud_pores.csv`, plus `<time>/lagrangian/poreCloud/` for ParaView.
+
+## Replaying a finished run (`poreCloudReplay`)
+
+The cloud is one-way coupled — it reads the melt fields, the melt never sees the
+parcels — and measured cost is ~0.1% of runtime against ~100% for the CFD. Re-solving a
+2.5-hour `laserbeamFoam` run just to try a different cloud parameter (`exclusionCoeff`,
+injection rate, size distribution, ...) is therefore pure waste.
+
+`applications/poreCloudReplay` is a standalone application that drives the same,
+unmodified `poreCloud` functionObject against the already-stored fields of a finished
+run instead. It reads a case's own mesh and controlDict as any OpenFOAM application
+would, discovers the stored snapshot times, then advances with its own (much finer)
+timestep, linearly interpolating `U`, `J_MHD`, `epsilon1`, `T` and `alpha.metal` in time
+between the two stored snapshots bracketing the replay clock. Disk is touched only when
+the replay clock crosses into a new bracket — reading a full timestep of fields on every
+sub-step would cost as much as the CFD it replaces. `rho` and `nu` are not stored on
+disk (`laserbeamFoam` never writes them) and are re-derived every step from the
+interpolated `alpha.metal`, using the same formulas `createFields.H` /
+`laserbeamFoam.C` use (mass-weighted Newtonian blend, or the Arrhenius `nu(T)` override
+when the case's `transportProperties` defines it).
+
+```bash
+cd <finished-case>      # already has stored time directories and
+                         # constant/poreCloudProperties + the functionObject entry
+poreCloudReplay          # serial
+mpirun -np N poreCloudReplay -parallel   # or against a decomposed case
+```
+
+Set `startTime`/`endTime`/`deltaT`/`adjustTimeStep` in `system/controlDict` as for any
+solver; `startTime` must fall inside the stored snapshot range (replay cannot
+extrapolate beyond it). Serial is preferred when available, for the same
+`cellCells()`-does-not-cross-a-processor-boundary reason noted below for sphere
+averaging.
+
+**Limitation to validate before trusting the output**: storage cadence is typically
+1e-5 s against a CFD timestep around 1e-7 s — roughly 87x coarser. Linear interpolation
+between snapshots that far apart smooths out anything that varies faster than the
+storage cadence (fast MHD/turbulent transients, a rotating field with a period
+comparable to the cadence, non-monotonic behaviour between two snapshots). Treat replay
+output as a fast first look, not ground truth, until checked against a short
+directly-coupled run over the same window. See the header comment in
+`poreCloudReplay.C` for the full reasoning.
 
 ## What this library provides
 

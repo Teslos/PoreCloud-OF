@@ -4,4 +4,6 @@ cd "${0%/*}" || exit
 wclean libso src/poreCloud
 rm -rf src/poreCloud/lnInclude
 
+wclean applications/poreCloudReplay
+
 #------------------------------------------------------------------------------

@@ -1,0 +1,20 @@
+/* poreCloudReplay
+ *
+ * Deliberately small: this application never instantiates a cloud, a force
+ * model or anything else from libPoreCloud - it just makes correctly-named
+ * fields exist in the registry and lets Time's own functionObject machinery
+ * drive the (unmodified) poreCloud functionObject, which is loaded
+ * dynamically at run time via the case's controlDict "libs" entry, exactly
+ * as in a live laserbeamFoam run. So no lagrangian/lagrangianIntermediate
+ * include or link is needed here - only core finiteVolume (meshTools is
+ * pulled in because finiteVolume's cyclicAMI patch headers require it, the
+ * same as any other fvCFD.H-based application).
+ */
+
+EXE_INC = \
+    -I$(LIB_SRC)/finiteVolume/lnInclude \
+    -I$(LIB_SRC)/meshTools/lnInclude
+
+EXE_LIBS = \
+    -lfiniteVolume \
+    -lmeshTools

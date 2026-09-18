@@ -4,4 +4,11 @@ cd "${0%/*}" || exit                        # run from this directory
 
 wmake libso src/poreCloud
 
+# poreCloudReplay only needs libPoreCloud.so at RUNTIME - it is loaded
+# dynamically via a case's controlDict "libs" entry, exactly as in a live
+# laserbeamFoam run - so it does not link against it and build order here
+# doesn't matter for compilation. Built second anyway, mirroring
+# mhd-laserbeamfoam-solver's src-then-applications Allwmake convention.
+wmake applications/poreCloudReplay
+
 #------------------------------------------------------------------------------
