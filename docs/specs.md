@@ -464,6 +464,74 @@ survey reports `frac_up = NaN` for that case rather than `0.0`. Reporting zero w
 the no-field control as *worse* than every field configuration it exists to be the
 baseline for, which would invert the comparison the whole survey is for.
 
+### 5.10 Replay is not worth building — measured, and the answer is no
+
+§5.9 established that trajectory replay fails on the *existing* runs, because
+fields were written every 1e-5 s and the velocity decorrelates ~60% over that
+gap. The obvious next move is to re-run selected cases writing fields often
+enough that replay works. That does not survive costing either, and this
+section records why so the idea is not rebuilt.
+
+**Decorrelation does not scale linearly, so it cannot be extrapolated.** Over
+successive multiples of the storage interval the change saturates rather than
+growing in proportion:
+
+\verbatim
+  gap        ||dU||/||U||    per 1e-5 s
+  1e-5           66.2%          66.2%
+  2e-5           83.3%          41.6%
+  3e-5           88.9%          29.6%
+  4e-5          102.1%          25.5%
+\endverbatim
+
+The per-interval rate falls as the gap grows, which is a correlation function
+approaching its plateau. At 1e-5 the flow is already near complete
+decorrelation, so nothing in the stored data constrains behaviour *below* that
+interval. The required cadence had to be measured directly.
+
+**A 61-step probe at dt = 1.15e-7, writing every step, settles it:**
+
+\verbatim
+  gap          steps   ||dU||/||U||
+  1.15e-07         1        7.1%
+  2.30e-07         2       10.0%
+  5.75e-07         5       28.5%
+  1.15e-06        10       62.1%
+  2.30e-06        20       76.0%
+\endverbatim
+
+The flow decorrelates almost completely within **ten timesteps**. By 1.15e-6 s
+it stands at 62%, indistinguishable from the 1e-5 s storage interval's 66%.
+Holding linear interpolation near 10% error therefore requires writing every
+one or two timesteps — which is to say, writing every step.
+
+**And writing every step costs more than the CFD it was meant to replace.**
+Measured on the same probe: 1.57 s/step against the 0.893 s/step baseline, an
+1.8x I/O penalty.
+
+\verbatim
+                                   wall time   storage
+  write every step, then replay        4.3 h    298-965 GB
+  re-run the CFD with the cloud        2.5 h         11 GB
+\endverbatim
+
+Replay costs 1.7x the wall time and 27-88x the storage of simply re-running
+the simulation with the cloud attached. The premise was that the CFD is 99.9%
+of the cost and the cloud 0.1%, so avoiding the CFD would be a large win. The
+premise is true; the conclusion does not follow, because the flow field is too
+fast-varying relative to the timestep for any storable representation of it to
+be cheaper than recomputing it.
+
+**What to do instead.** For Lagrangian trajectories on any case, re-run that
+case with the `poreCloud` functionObject attached, as the 0.2 T azimuthal run
+already did: 2.5 h, 11 GB, and the cloud rides along for 0.1%. The
+`poreCloudReplay` application built in `applications/` remains correct and
+works, but has no economic case on this problem; it is kept for a future
+solver whose flow evolves slowly enough to make stored fields worth reusing.
+
+For the direction question specifically, neither is needed — §5.9's Eulerian
+survey answers it from fields already on disk, in seconds.
+
 ## 6. Deliberate omissions
 
 **Drag / added mass / lift are not broken out in the CSV.** They are evaluated inside
