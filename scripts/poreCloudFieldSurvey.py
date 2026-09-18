@@ -120,14 +120,28 @@ def survey_snapshot(case, t, ncells=None):
     mag = np.linalg.norm(lf[liquid], axis=1)
     up = ef_y > 0
 
-    # A no-field control has F = 0 everywhere, where "fraction pointing up" is
-    # not 0% but undefined - there is no direction to ask about. Reporting 0%
-    # would rank the control as the worst case rather than the baseline.
-    if mag.max() <= 0:
+    # Two ways the question can have no answer, both of which must report NaN
+    # rather than 0%, because 0% ranks a case as the WORST configuration when
+    # it is really no configuration at all.
+    #
+    #   1. No field: F = 0 everywhere, so there is no direction to ask about.
+    #
+    #   2. B parallel to y: the Lorentz force is J x B, which is perpendicular
+    #      to B by construction, so F_y is IDENTICALLY zero - not small, exactly
+    #      zero in every cell - while F_x and F_z are large. Such a field cannot
+    #      push a bubble up or down even in principle. Measured on
+    #      matched/dc-by-0.2T: F_y == 0 in all 57306 cells with force, against
+    #      max|F_z| = 1.28e8. Reporting that as "0% pushed up" invites the
+    #      reading "pushes everything down", which is the opposite of true:
+    #      it exerts no vertical force at all.
+    degenerate_y = mag.max() > 0 and np.all(ef_y == 0.0)
+    if mag.max() <= 0 or degenerate_y:
         return {
             'time': float(t), 'n_liquid': int(liquid.sum()),
             'frac_up': float('nan'), 'frac_up_force_weighted': float('nan'),
-            'median_force_density': 0.0, 'median_ef_y': 0.0,
+            'median_force_density': float(np.median(mag)) if mag.max() > 0 else 0.0,
+            'median_ef_y': 0.0,
+            'undefined_reason': 'B_parallel_to_y' if degenerate_y else 'no_field',
         }
 
     return {
@@ -138,6 +152,7 @@ def survey_snapshot(case, t, ncells=None):
             float((mag * up).sum() / mag.sum()) if mag.sum() > 0 else float('nan'),
         'median_force_density': float(np.median(mag)),
         'median_ef_y': float(np.median(ef_y)),
+        'undefined_reason': '',
     }
 
 
@@ -171,6 +186,8 @@ def summarise(case, rows):
         'case': case,
         'n_snapshots': len(rows),
         'no_field': nofield,
+        'undefined_reason': next((r.get('undefined_reason','') for r in rows
+                                  if r.get('undefined_reason')), ''),
         'frac_up_mean': float('nan') if nofield else float(np.nanmean(fu)),
         'frac_up_poolweighted': float('nan') if nofield
             else float(np.nansum(fu * w) / np.nansum(w * ~np.isnan(fu))),
