@@ -400,6 +400,70 @@ exact negation, so `scripts/poreCloudReport.py` detects the old convention and f
 rather than requiring a re-run. Only the reported column was affected — the integrated
 motion always used OpenFOAM's own force.
 
+### 5.9 Field survey — an Eulerian cross-check without trajectories
+
+`scripts/poreCloudFieldSurvey.py` asks the same question as §5.8 — does the exclusion
+force point toward the free surface? — without running a cloud. It exists because
+trajectory replay on a *finished* run turns out not to be available as a cheaper fallback.
+
+**Why replay fails.** Fields are written every 1e-5 s; the solver's own timestep is
+~1.15e-7 s, so consecutive stored snapshots are ~87 solver steps apart. Measuring
+`||dU||/||U||` between consecutive stored snapshots over the sampled window:
+
+```
+46.8%   36.6%   78.2%   77.9%   53.8%   88.3%   48.0%   51.3%      mean 60.1%
+```
+
+The velocity field decorrelates by more than half, on average, between writes. The direct
+test of whether a missing snapshot can be reconstructed from its neighbours —
+interpolating `t0 -> t2` to predict the held-out `t1` — gives 30–62% L2 error on `U`. The
+physical reason is simple: at melt speeds around 1 m/s (§5.4/§5.8's own median of 1.4 m/s
+is the same order), the flow advects ~10 µm per 1e-5 s write interval — more than one cell
+width (8.3 µm). A Lagrangian integrator needs the field *between* writes, and between
+writes the flow has already moved past where it was sampled. This is not a resolution
+problem that a smarter interpolant fixes; it is the write cadence being too coarse relative
+to the flow's own decorrelation time, on a run that has already finished.
+
+**The Eulerian alternative.** The direction question does not need a trajectory at all.
+The exclusion force on a bubble is
+
+```
+F_exclusion = -1.5 * V_bubble * (J x B) = -1.5 * V_bubble * LorentzForce
+```
+
+— exactly antiparallel to the melt's own Lorentz body force (the same `-1.5` coefficient
+as §4), which the solver already writes to disk at every output. "Does the exclusion force
+point up" therefore reduces to a sign flip on a field that already exists on disk,
+evaluated once per stored snapshot with no time integration and no interpolation. This is
+confirmed empirically, not just taken on the algebra: the solver's own `exclusionForce`
+field sits at `cos(angle) = -0.9993` to `LorentzForce` — antiparallel to four nines.
+
+**Cross-validation.** On the 0.2 T azimuthal case, the field survey — seconds of
+post-processing on fields already on disk — gives **30.3%** of the liquid pushed upward.
+The full Lagrangian run (§5.8), ~2.5 hours of CFD plus cloud integration, gives **29.6%**
+of bubbles with net upward EM impulse. Two independent methods — one reading instantaneous
+fields, one integrating ~350k force samples along real trajectories — agree to within a
+percentage point. Said plainly: the expensive Lagrangian pipeline was reproducing, for the
+direction question, something computable from stored fields in seconds.
+
+**What this does not give.** The agreement above is about force *direction* only. The
+field survey has no notion of a trajectory, so it cannot say how long a bubble spends in
+the pool, whether it actually reaches the free surface, or what drag and advection do to
+its path — melt advection outruns the EM drift by ~50× (§5.4), and §5.8 found the
+correlation between vertical EM impulse and a bubble's net rise is weak and in fact
+slightly negative (−0.08). Residence time, escape, drag, added mass: none of that is
+recoverable from an instantaneous field, however many snapshots are surveyed. Those
+questions still need the Lagrangian cloud run on finely-written fields. The two methods
+answer different questions; what agrees above is the sign of the force, not the fate of
+any particular bubble.
+
+**The no-field control.** As with the Lagrangian budget, a case with no applied field has
+`LorentzForce = 0` everywhere in the liquid, and "fraction of the force pointing up" is
+then not a well-posed question — there is no force, hence no direction to ask about. The
+survey reports `frac_up = NaN` for that case rather than `0.0`. Reporting zero would rank
+the no-field control as *worse* than every field configuration it exists to be the
+baseline for, which would invert the comparison the whole survey is for.
+
 ## 6. Deliberate omissions
 
 **Drag / added mass / lift are not broken out in the CSV.** They are evaluated inside
