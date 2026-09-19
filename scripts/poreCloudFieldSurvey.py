@@ -46,23 +46,36 @@ EPS_MIN = 0.5
 
 
 def read_field(path, vec):
-    """Read an OpenFOAM internalField, ascii or binary, uniform or nonuniform."""
+    """Read an OpenFOAM internalField, ascii or binary, uniform or nonuniform.
+
+    Format is taken from the FoamFile header, NOT guessed. An earlier version
+    tried the binary interpretation whenever the byte count happened to fit and
+    accepted it if the values looked finite and not absurd. That guard is far
+    weaker than it appears: ascii digit bytes reinterpreted as little-endian
+    float64 usually land on small, finite, entirely plausible numbers. It
+    silently returned 1e-259..1e-33 for a temperature field whose real range is
+    306..3892 K, which made a `T > 870` mask empty and an analysis built on it
+    wrong. Scalars are the dangerous case - a vector needs three times the
+    bytes, so ascii is too short to be mistaken for one.
+    """
     raw = open(path, 'rb').read()
     kind = b'vector' if vec else b'scalar'
+
+    fmt = re.search(rb'^\s*format\s+(ascii|binary)\s*;', raw[:2048], re.M)
+    binary = bool(fmt) and fmt.group(1) == b'binary'
+
     m = re.search(rb'internalField\s+nonuniform\s+List<' + kind + rb'>\s*\n(\d+)\s*\n\(', raw)
     if m:
         n = int(m.group(1))
         start = m.end()
+        count = n * (3 if vec else 1)
+        if binary:
+            a = np.frombuffer(raw[start:start + 8 * count], dtype='<f8')
+            if len(a) != count:
+                raise ValueError(f'{path}: truncated binary block')
+            return a.reshape(n, 3) if vec else a
         if raw[start:start + 1] == b'\n':
             start += 1
-        count = n * (3 if vec else 1)
-        block = raw[start:start + 8 * count]
-        if len(block) == 8 * count:
-            a = np.frombuffer(block, dtype='<f8')
-            # A binary read of ascii data yields garbage, not an exception -
-            # so sanity-check before trusting it.
-            if np.isfinite(a).all() and np.abs(a).max() < 1e30:
-                return a.reshape(n, 3) if vec else a
         end = raw.index(b'\n)', start)
         toks = raw[start:end].replace(b'(', b' ').replace(b')', b' ').split()
         a = np.array([float(x) for x in toks])
