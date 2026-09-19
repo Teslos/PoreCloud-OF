@@ -532,6 +532,94 @@ solver whose flow evolves slowly enough to make stored fields worth reusing.
 For the direction question specifically, neither is needed — §5.9's Eulerian
 survey answers it from fields already on disk, in seconds.
 
+### 5.11 Three configurations compared — and the survey's systematic bias
+
+The §5.9 survey ranked field configurations cheaply. Three were then run properly
+with the Lagrangian cloud, on the calibrated injection of `ca25dbf`, each over the
+same t = 0.001 → 0.002 window on 18 ranks:
+
+\verbatim
+  case            bubbles    %up    95% CI        %rose   %surface   |EM|/|buoy|
+  azimuthal-0.2T     2848   29.6%   28.0-31.3%    43.2%      5.2%         25.4x
+  dc-bx-0.2T          236   48.3%   41.9-54.7%    44.9%      8.8%         33.9x
+  rmf-xz-0.2T         386   47.4%   42.4-52.4%    45.6%      8.9%         31.0x
+\endverbatim
+
+**No configuration expels.** dc-bx and rmf-xz are statistically indistinguishable
+from each other and both sit just below directional neutrality. The azimuthal
+field is decisively the worst (+18.7 points from azimuthal to dc-bx, z = 5.6).
+
+The practical gain from abandoning azimuthal is real but indirect: **8.8-8.9% of
+bubbles reach the surface against 5.2%**, a ~70% improvement achieved by removing
+a downward force rather than adding an upward one.
+
+**The survey over-predicts, systematically.** Against the same three cases it gave
+35.0%, 56.9% and 52.2% — high by +5.4, +8.6 and +4.8 points. The rmf-xz value was
+predicted before that run as a test: ~44% if the bias were systematic, ~52% if
+dc-bx were anomalous. It came in at 47.4%, confirming the bias.
+
+The mechanism is that the survey weights every cubic micron of liquid equally,
+while bubbles do not sample the pool uniformly - they are born in liquid,
+advected by the flow, and frozen where they solidify. A volume-averaged force
+field is not what bubbles experience. **The survey is a sound ranking tool and an
+unsound predictor**; §5.9's single-case agreement (30.3% vs 29.6%) now reads as
+partly luck, and should be treated as such.
+
+### 5.12 Resolved injected pores do not survive — so they cannot be measured
+
+The `mhd-openfoam` azimuthal study reports (its §2) an up-fraction of **0.78** for
+the exclusion force, against the 29.6% of §5.11 on the same field. The
+contradiction is resolved here, and neither result is wrong.
+
+**Their number reproduces exactly.** Re-running their case with their own
+procedure and analysis: mean|F| 2.87e5, surface-ward +0.334, cos +0.994,
+up-frac 0.78, against a published 2.9e5 / +0.334 / +0.994 / 0.78.
+
+**But it measures the keyhole wall.** Their mask is
+`gas & dilate(melt,2) & T>870`, which does not exclude the keyhole. Decomposed
+over their own 300-700 us window: **6076 keyhole-connected cells against 151
+isolated-pore cells - 97.6% keyhole**. The azimuthal field is constructed to
+circulate around the keyhole axis, so a coherent surface-ward force on that wall
+is close to a restatement of the field's definition.
+
+**The cause is that injected pores do not persist.** Two attempts:
+
+  - Their protocol injects 4 pores of 35 um radius at t = 1e-4. At that instant
+    the pool holds **105 liquid cells** against the 398 a pore occupies, and
+    liquid extends only to r = 39 um from the keyhole axis. There is nowhere to
+    put a pore that is not the keyhole. The injection time, not the placement,
+    makes isolated pores unachievable.
+
+  - Injecting instead at t = 5e-4, at four sites verified as fully liquid
+    (eps = 1.00, T = 1002-1058 K, i.e. 130-190 K above liquidus), r = 61-91 um
+    from the axis, each with 61-70 um clearance from any pre-existing gas, gives
+    4/4 genuinely isolated voids of 435-437 cells. Fifty microseconds later the
+    largest isolated void is **12 cells**:
+
+\verbatim
+  t (us)   isolated voids   sizes (cells)
+     500          4         [437, 437, 435, 435]
+     550          7         [12, 10, 6, 2, 1, 1]
+     700         10         [6, 4, 2, 2, 2, 1]
+    1500          6         [4, 2, 2, 2, 1, 1]
+\endverbatim
+
+A resolved gas void of this size is not sustainable in this solver: nothing holds
+it open against ambient pressure, so it collapses or is absorbed within tens of
+microseconds. **The measurement §2 attempts is therefore not achievable at all**,
+independent of placement or timing - which is the reason the Lagrangian sub-grid
+cloud exists.
+
+An up-fraction of 0.20 can be computed on the surviving "isolated" cells, but it
+is measured on 1-12 cell fragments rather than pores and is not offered as a
+counter-result. The defensible numbers are those that do not require sustaining a
+resolved void: 29.6% from tracked bubbles, 35% from the Eulerian survey.
+
+**Practical consequence.** Any study injecting resolved pores into this solver
+should verify survival before measuring - a connected-component check on
+`alpha.metal` a few write intervals after injection is sufficient. And §2's
+up-fraction is best reported as a keyhole-wall measurement, which it validly is.
+
 ## 6. Deliberate omissions
 
 **Drag / added mass / lift are not broken out in the CSV.** They are evaluated inside
