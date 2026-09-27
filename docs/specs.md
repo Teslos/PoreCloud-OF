@@ -649,6 +649,52 @@ should verify survival before measuring - a connected-component check on
 `alpha.metal` a few write intervals after injection is sufficient. And §2's
 up-fraction is best reported as a keyhole-wall measurement, which it validly is.
 
+### 5.13 The cloud rebuilt B independently of the solver, and the two diverged
+
+`poreCloud::magneticField` reads `MHD` out of `transportProperties` and builds
+its own `B` field. `UEqn.H` does the same, separately. Nothing tied them
+together, so the moment one side learned a keyword the other did not, the cloud
+began integrating its forces in a field the momentum equation never applied.
+
+That happened with `MHD.alternating`, added to the solver for the AC study.
+`buildUniform()` branched only on omega - zero meant DC along `staticField`,
+nonzero meant rotating in `rotationPlane`. An AC case sets **both** `frequency`
+and `rotationPlane`, so it fell through to the rotating branch:
+
+| | B seen |
+|---|---|
+| cloud (RMF branch) | `B0 (cos wt, sin wt, 0)` - rotating in xy |
+| `UEqn.H` (AC branch) | `B0 (0, cos wt, 0)` - oscillating along y |
+
+**Why this particular divergence was maximally damaging.** For B along y the
+vertical exclusion force is not merely small, it is identically zero:
+
+    F_y = -1.5 V (J x B)_y = -1.5 V (J_z B_x - J_x B_z),   B_x = B_z = 0
+
+The bug replaced an exact structural zero with a spurious F_y of the same order
+as F_x. An AC-along-y run therefore appeared to generate vertical force where
+the applied field can generate none - the one quantity the whole expulsion study
+measures.
+
+**How it was caught.** Not by the run failing; it exited 0 after the full
+t = 1 -> 2 ms with 376 parcels. It was caught by checking the reported forces
+against the geometry: `max|F_y| = 3.0e-6 N` against `max|F_x| = 4.7e-6 N`, when
+`F_y` was required to be zero. `results/poreCloud-ac-by-400Hz_INVALID-cloud-B-mismatch/`
+keeps that run as the record; its numbers must not be quoted.
+
+**The check that generalises.** Every uniform-field configuration has a
+component of the exclusion force that vanishes by construction - the one along
+B. Asserting that component is zero costs nothing and catches any disagreement
+between the two field builders, whatever its cause. It is strictly stronger than
+comparing magnitudes, because it does not require a reference run.
+
+The structural fact itself was already known (§5.11: `B parallel to y` gives
+`F_y == 0` in all 57306 cells carrying force, and the survey reports
+`undefined_reason = B_parallel_to_y` rather than 0%). The survey got it right
+because it reads the solver's own written `LorentzForce` field. The cloud got it
+wrong because it recomputed B. **Reading the solver's field is the safer
+pattern; recomputing it duplicates a decision that then has to be kept in sync.**
+
 ## 6. Deliberate omissions
 
 **Drag / added mass / lift are not broken out in the CSV.** They are evaluated inside
