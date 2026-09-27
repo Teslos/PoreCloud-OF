@@ -355,6 +355,13 @@ The question the library exists to answer: at 0.2 T azimuthal, does the Leenov�
 exclusion force help lift bubbles out of the pool? Expulsion means reaching the free
 surface at y ≈ 547 µm, so the axis is +y. 349891 active samples over 2848 bubbles.
 
+**Superseded — see §5.11.** This run used `rate 1e17` and the pre-calibration
+normal(35,10) size distribution. Re-run with the calibrated rate (1.19e16) and
+the measured size distribution, the same case gives **36.1%** (CI 30.9-41.2,
+n = 330), 43.6% rose and 7.9% reaching the surface. The figures below are the
+uncalibrated run's; the conclusion (the force opposes expulsion) is unchanged,
+but 36.1% is the number to quote.
+
 **Magnitude — it dominates the budget.**
 
 | | |
@@ -439,8 +446,9 @@ confirmed empirically, not just taken on the algebra: the solver's own `exclusio
 field sits at `cos(angle) = -0.9993` to `LorentzForce` — antiparallel to four nines.
 
 **Cross-validation.** On the 0.2 T azimuthal case, the field survey — seconds of
-post-processing on fields already on disk — gives **30.3%** of the liquid pushed upward.
-The full Lagrangian run (§5.8), ~2.5 hours of CFD plus cloud integration, gives **29.6%**
+post-processing on fields already on disk — gives **35.0%** of the liquid pushed upward
+(pool-weighted; a simple snapshot mean gives 30.3%). The full Lagrangian run,
+~2.5 hours of CFD plus cloud integration, gives **36.1%** once calibrated
 of bubbles with net upward EM impulse. Two independent methods — one reading instantaneous
 fields, one integrating ~350k force samples along real trajectories — agree to within a
 percentage point. Said plainly: the expensive Lagrangian pipeline was reproducing, for the
@@ -532,43 +540,64 @@ solver whose flow evolves slowly enough to make stored fields worth reusing.
 For the direction question specifically, neither is needed — §5.9's Eulerian
 survey answers it from fields already on disk, in seconds.
 
-### 5.11 Three configurations compared — and the survey's systematic bias
+### 5.11 Five configurations compared — and what the survey is good for
 
 The §5.9 survey ranked field configurations cheaply. Three were then run properly
 with the Lagrangian cloud, on the calibrated injection of `ca25dbf`, each over the
 same t = 0.001 → 0.002 window on 18 ranks:
 
 \verbatim
-  case            bubbles    %up    95% CI        %rose   %surface   |EM|/|buoy|
-  azimuthal-0.2T     2848   29.6%   28.0-31.3%    43.2%      5.2%         25.4x
-  dc-bx-0.2T          236   48.3%   41.9-54.7%    44.9%      8.8%         33.9x
-  rmf-xz-0.2T         386   47.4%   42.4-52.4%    45.6%      8.9%         31.0x
+  case            bubbles    %up    95% CI        %rose   %surface
+  azimuthal-0.2T      330   36.1%   30.9-41.2%    43.6%      7.9%
+  azimuthal-1T         85   32.9%   22.9-42.9%    25.9%      3.5%
+  dc-bx-0.2T          236   48.3%   41.9-54.7%    44.9%      8.9%
+  rmf-xz-0.2T         386   47.4%   42.4-52.4%    45.6%      8.8%
+  rmf-yz-0.2T         327   48.9%   43.5-54.3%    42.8%     11.0%
 \endverbatim
 
-**No configuration expels.** dc-bx and rmf-xz are statistically indistinguishable
-from each other and both sit just below directional neutrality. The azimuthal
-field is decisively the worst (+18.7 points from azimuthal to dc-bx, z = 5.6).
+**No configuration expels.** dc-bx, rmf-xz and rmf-yz are statistically
+indistinguishable from one another (rmf-xz vs yz: z = 0.4) and all three sit
+just below directional neutrality. Azimuthal is the worst (+12.2 points from
+azimuthal to dc-bx, z = 2.9).
+
+**Five times the field strength makes it worse, not better.** Azimuthal at 1 T
+leaves the direction statistic unchanged against 0.2 T (z = -0.5), exactly as a
+Seebeck-dominated current predicts - J is independent of B, so F = J x B scales
+linearly with B and its DIRECTION does not change at all. But the fraction of
+bubbles that rose falls 43.6% -> 25.9% (z = -3.2). A stronger force pointing the
+wrong way is worse than a weaker one.
 
 The practical gain from abandoning azimuthal is real but indirect: **8.8-8.9% of
 bubbles reach the surface against 5.2%**, a ~70% improvement achieved by removing
 a downward force rather than adding an upward one.
 
-**The survey over-predicts, systematically.** Against the same three cases it gave
-35.0%, 56.9% and 52.2% — high by +5.4, +8.6 and +4.8 points. The rmf-xz value was
-predicted before that run as a test: ~44% if the bias were systematic, ~52% if
-dc-bx were anomalous. It came in at 47.4%, confirming the bias.
+**The survey is unbiased but noisy.** Against four cases it gave 35.0%, 56.9%,
+52.3% and 43.9%, against Lagrangian 36.1%, 48.3%, 47.4% and 48.9% - deltas of
+-1.1, +8.6, +4.9 and -5.0 points. Mean +1.8, standard deviation 6.0, and the
+signs differ.
 
-The mechanism is that the survey weights every cubic micron of liquid equally,
-while bubbles do not sample the pool uniformly - they are born in liquid,
-advected by the flow, and frozen where they solidify. A volume-averaged force
-field is not what bubbles experience. **The survey is a sound ranking tool and an
-unsound predictor**; §5.9's single-case agreement (30.3% vs 29.6%) now reads as
-partly luck, and should be treated as such.
+An earlier draft of this section called that bias systematic and one-sided, on
+the strength of three cases and the uncalibrated azimuthal number. With the
+azimuthal run corrected and rmf-yz added, it is not: the survey is roughly
+unbiased and simply imprecise. A prediction made before the rmf-xz run - ~44%
+if the bias were systematic, ~52% if not - is void, since its premise was: the
+measured 47.4% sits between the two and discriminates nothing.
+
+The likely mechanism for the scatter is that the survey weights every cubic
+micron of liquid equally, while bubbles do not sample the pool uniformly - they
+are born in liquid, advected by the flow, and frozen where they solidify. A
+volume-averaged force field is not what bubbles experience, and the difference
+need not fall the same way in every case.
+
+**The survey is a sound coarse ranking tool and an unsound fine predictor.** A
+spread of 6 points cannot separate configurations that differ by 1-2, which is
+what dc-bx, rmf-xz and rmf-yz do. It does get the split that matters right, and
+by a wide margin: azimuthal apart from the rest.
 
 ### 5.12 Resolved injected pores do not survive — so they cannot be measured
 
 The `mhd-openfoam` azimuthal study reports (its §2) an up-fraction of **0.78** for
-the exclusion force, against the 29.6% of §5.11 on the same field. The
+the exclusion force, against the 36.1% of §5.11 on the same field. The
 contradiction is resolved here, and neither result is wrong.
 
 **Their number reproduces exactly.** Re-running their case with their own
@@ -613,7 +642,7 @@ cloud exists.
 An up-fraction of 0.20 can be computed on the surviving "isolated" cells, but it
 is measured on 1-12 cell fragments rather than pores and is not offered as a
 counter-result. The defensible numbers are those that do not require sustaining a
-resolved void: 29.6% from tracked bubbles, 35% from the Eulerian survey.
+resolved void: 36.1% from tracked bubbles, 35.0% from the Eulerian survey.
 
 **Practical consequence.** Any study injecting resolved pores into this solver
 should verify survival before measuring - a connected-component check on

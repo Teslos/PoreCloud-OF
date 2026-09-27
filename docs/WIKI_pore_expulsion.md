@@ -40,26 +40,37 @@ the direction question needs no particle tracking and no time integration.
 
 ## 3. Result
 
-Three configurations run with the Lagrangian cloud, same t = 1→2 ms window, calibrated
-injection, 18 MPI ranks:
+Five configurations run with the Lagrangian cloud, same t = 1→2 ms window, per-case
+calibrated injection, 18 MPI ranks:
 
 | configuration | bubbles | **% pushed up** | 95% CI | % that rose | % reaching surface |
 |---|---|---|---|---|---|
-| azimuthal 0.2 T | 2848 | **29.6%** | 28.0–31.3 | 43.2% | 5.2% |
-| DC, B∥x, 0.2 T | 236 | **48.3%** | 41.9–54.7 | 44.9% | 8.8% |
-| RMF xz-plane, 0.2 T | 386 | **47.4%** | 42.4–52.4 | 45.6% | 8.9% |
+| azimuthal 0.2 T | 330 | **36.1%** | 30.9–41.2 | 43.6% | 7.9% |
+| azimuthal **1 T** | 85 | 32.9% | 22.9–42.9 | **25.9%** | 3.5% |
+| DC, B∥x, 0.2 T | 236 | **48.3%** | 41.9–54.7 | 44.9% | 8.9% |
+| RMF xz-plane, 0.2 T | 386 | **47.4%** | 42.4–52.4 | 45.6% | 8.8% |
+| RMF yz-plane, 0.2 T | 327 | **48.9%** | 43.5–54.3 | 42.8% | **11.0%** |
 
-**Nothing exceeds 50%.** DC-x and RMF-xz are statistically indistinguishable and sit
-just below neutrality. Azimuthal is decisively worse (+18.7 points to DC-x, z = 5.6).
+**Nothing exceeds 50%.** DC-x, RMF-xz and RMF-yz are statistically indistinguishable
+from one another and all sit just below neutrality. Azimuthal is the worst
+(+12.2 points to DC-x, z = 2.9).
 
-**The gain from abandoning azimuthal is real but indirect:** 8.8–8.9% of bubbles reach
-the surface against 5.2% — a ~70% improvement, achieved by *removing a downward force*
-rather than adding an upward one.
+**More field makes it worse, not better.** At 1 T the direction statistic is unchanged
+against 0.2 T (z = −0.5) — as expected, since the current here is Seebeck-dominated and
+therefore independent of B, so `F = J × B` grows linearly with B but does not change
+direction. Yet the fraction of bubbles that rose falls **43.6% → 25.9%** (z = −3.2). A
+stronger force pointing the wrong way is worse than a weaker one.
+
+**The gain from abandoning azimuthal is real but modest:** 8.8–11.0% of bubbles reach
+the surface against 7.9%, achieved by *removing a downward force* rather than adding an
+upward one.
 
 Across all 35 archived cases the Eulerian survey adds two structural findings:
 
 - **Orientation dominates strength.** 0.1 T vs 0.2 T moves RMF results by under 1.5
-  points in every matched pair.
+  points in every matched pair, and 0.2 T vs 1 T does not move the direction statistic
+  at all. The current is Seebeck-dominated, hence B-independent, so `F = J × B` scales
+  linearly with B while its direction is set by the thermoelectric current structure.
 - **B∥y can never help.** Since `J × B ⊥ B`, a field along y gives `F_y ≡ 0` exactly —
   verified as zero in all 57,306 cells carrying force. It is not a poor configuration;
   it is structurally incapable of vertical force.
@@ -89,12 +100,15 @@ the keyhole, regardless of the coordinates requested.
 
 ### 4.2 A volume-averaged force field is not what bubbles experience
 
-The Eulerian survey is an excellent *ranking* tool and an unreliable *predictor*. Against
-the three Lagrangian runs it read high by +4.8 to +8.6 points, consistently. Bubbles are
-born in liquid, advected by the flow and frozen where they solidify, so they do not
-sample the pool uniformly the way a volume average assumes.
+The Eulerian survey is roughly unbiased but imprecise. Against four tracked-bubble runs
+its deltas were **−1.1, +8.6, +4.9 and −5.0 points** — mean +1.8, standard deviation 6.0,
+and the signs differ. Bubbles are born in liquid, advected by the flow and frozen where
+they solidify, so they do not sample the pool the way a volume average assumes, and the
+difference does not fall the same way in every case.
 
-Use the survey to choose what to run; use the cloud to get a number.
+A spread of 6 points cannot separate configurations differing by 1–2, which is what the
+three best ones do. Use the survey for the coarse split — azimuthal against the rest,
+which it gets right by a wide margin — and the cloud for a number.
 
 ## 5. Reconciling the earlier azimuthal study
 
