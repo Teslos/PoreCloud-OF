@@ -24,13 +24,17 @@ stopAt          endTime;
 
 endTime         0.002;
 
-deltaT          1e-06;
+deltaT          1e-08;
 
-maxAlphaCo      1;
+adjustTimeStep  yes;
 
-writeControl    timeStep;
+maxCo           0.7;
 
-writeInterval   100;
+maxAlphaCo      0.7;
+
+writeControl    adjustableRunTime;
+
+writeInterval   1e-05;
 
 purgeWrite      0;
 
