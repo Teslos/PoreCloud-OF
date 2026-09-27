@@ -128,6 +128,27 @@ class MeltPoolInjection
         //- Liquid fraction threshold
         const scalar epsMin_;
 
+        //- Radial seeding: bias injection toward a moving axis so that the
+        //  distribution of birth radii matches a measured one, instead of the
+        //  default uniform-per-unit-liquid-volume.
+        //
+        //  This is not cosmetic. Uniform seeding places bubbles wherever there
+        //  is liquid, which puts ~46% of them beyond 150 um of the keyhole -
+        //  whereas resolved-VoF runs show 92-100% of real pores forming within
+        //  100 um of it. Outcomes depend strongly on birth position (the
+        //  up-fraction varies by a factor of ~4 across radius, and the sign of
+        //  the trend differs between field configurations), so the seeding
+        //  choice moves population statistics by tens of percentage points and
+        //  can reorder configurations. See docs/specs.md.
+        //
+        //  Empty radialProfile_ leaves the original uniform behaviour.
+        vector axisPoint_;
+        vector axisVelocity_;
+
+        //- Bin edges [m] and the target probability mass in each bin.
+        scalarList radialEdges_;
+        scalarList radialWeights_;
+
         //- Injection duration [s]
         const scalar duration_;
 

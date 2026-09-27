@@ -56,6 +56,52 @@ void Foam::MeltPoolInjection<CloudType>::generatePositions(const scalar dt)
     scalar newParticlesTotal = fractionalCarry_;
     label addParticlesTotal = 0;
 
+    // Radial seeding: first pass measures how much liquid sits in each radius
+    // bin, so the second pass can distribute the SAME total rate across bins in
+    // the proportions given, rather than in proportion to liquid volume.
+    //
+    // Expected count in bin b becomes  rate*dt*V_liquid_total*weight[b],
+    // independent of how much liquid happens to lie in that bin - which is the
+    // whole point, since liquid volume is not where pores form.
+    scalarField binMult;
+    const bool radial = radialWeights_.size() > 0;
+    vector axisNow(Zero);
+    if (radial)
+    {
+        axisNow = axisPoint_ + axisVelocity_*this->owner().db().time().value();
+
+        const label nb = radialWeights_.size();
+        scalarField Vbin(nb, 0.0);
+        scalar Vtot = 0;
+        forAll(alpha, celli)
+        {
+            if (alpha[celli] <= alphaMin_) continue;
+            if (epsPtr && epsPtr->primitiveField()[celli] <= epsMin_) continue;
+            const point& c = mesh.C()[celli];
+            const scalar r = Foam::hypot(c.x()-axisNow.x(), c.z()-axisNow.z());
+            Vtot += V[celli];
+            for (label b = 0; b < nb; ++b)
+            {
+                if (r >= radialEdges_[b] && r < radialEdges_[b+1])
+                {
+                    Vbin[b] += V[celli];
+                    break;
+                }
+            }
+        }
+        // Bins are global: a rank seeing no liquid in a bin must still agree on
+        // the multiplier, or the distribution differs between decompositions.
+        reduce(Vtot, sumOp<scalar>());
+        forAll(Vbin, b) { reduce(Vbin[b], sumOp<scalar>()); }
+
+        binMult.setSize(nb, 0.0);
+        forAll(Vbin, b)
+        {
+            binMult[b] =
+                (Vbin[b] > VSMALL) ? (radialWeights_[b]*Vtot/Vbin[b]) : 0.0;
+        }
+    }
+
     forAll(alpha, celli)
     {
         // Liquid metal: the solver's own definition (alpha.metal and epsilon1
@@ -70,7 +116,26 @@ void Foam::MeltPoolInjection<CloudType>::generatePositions(const scalar dt)
             continue;
         }
 
-        newParticlesTotal += rate_*V[celli]*dt;
+        scalar cellRate = rate_*V[celli];
+        if (radial)
+        {
+            const point& c = mesh.C()[celli];
+            const scalar r = Foam::hypot(c.x()-axisNow.x(), c.z()-axisNow.z());
+            scalar mult = 0.0;
+            forAll(binMult, b)
+            {
+                if (r >= radialEdges_[b] && r < radialEdges_[b+1])
+                {
+                    mult = binMult[b];
+                    break;
+                }
+            }
+            // Outside the tabulated range the measured distribution says no
+            // pores form, so none are seeded there.
+            cellRate *= mult;
+            if (mult <= 0) continue;
+        }
+        newParticlesTotal += cellRate*dt;
 
         label addParticles = 0;
         const scalar diff = newParticlesTotal - addParticlesTotal;
@@ -195,6 +260,10 @@ Foam::MeltPoolInjection<CloudType>::MeltPoolInjection
     ),
     alphaMin_(this->coeffDict().template getOrDefault<scalar>("alphaMin", 0.5)),
     epsMin_(this->coeffDict().template getOrDefault<scalar>("epsMin", 0.5)),
+    axisPoint_(Zero),
+    axisVelocity_(Zero),
+    radialEdges_(),
+    radialWeights_(),
     duration_(this->coeffDict().getScalar("duration")),
     maxParcels_
     (
@@ -233,6 +302,51 @@ Foam::MeltPoolInjection<CloudType>::MeltPoolInjection
         << " and " << epsilonName_ << " > " << epsMin_ << nl
         << "        duration        : " << duration_ << " s" << nl
         << "        maxParcels      : " << maxParcels_ << nl;
+
+    // Optional: match a measured birth-radius distribution instead of seeding
+    // uniformly per unit liquid volume. The axis tracks the keyhole, which
+    // moves with the laser, so it is given as a point plus a velocity.
+    if (this->coeffDict().found("radialSeeding"))
+    {
+        const dictionary& rs = this->coeffDict().subDict("radialSeeding");
+        axisPoint_ = rs.get<vector>("axisPoint");
+        axisVelocity_ = rs.getOrDefault<vector>("axisVelocity", vector::zero);
+        radialEdges_ = rs.get<scalarList>("edges");
+        radialWeights_ = rs.get<scalarList>("weights");
+
+        if (radialWeights_.size() + 1 != radialEdges_.size())
+        {
+            FatalErrorInFunction
+                << "radialSeeding needs one more edge than weight: got "
+                << radialEdges_.size() << " edges and "
+                << radialWeights_.size() << " weights."
+                << exit(FatalError);
+        }
+
+        scalar wsum = 0;
+        forAll(radialWeights_, i)
+        {
+            if (radialWeights_[i] < 0)
+            {
+                FatalErrorInFunction
+                    << "radialSeeding weights must be non-negative."
+                    << exit(FatalError);
+            }
+            wsum += radialWeights_[i];
+        }
+        if (wsum <= SMALL)
+        {
+            FatalErrorInFunction
+                << "radialSeeding weights sum to zero." << exit(FatalError);
+        }
+        forAll(radialWeights_, i) { radialWeights_[i] /= wsum; }
+
+        Info<< "    MeltPoolInjection: radial seeding active, "
+            << radialWeights_.size() << " bins to "
+            << radialEdges_.last()*1e6 << " um about ("
+            << axisPoint_.x()*1e6 << ", " << axisPoint_.z()*1e6
+            << ") um drifting at " << axisVelocity_.x() << " m/s" << nl;
+    }
 }
 
 
@@ -248,6 +362,10 @@ Foam::MeltPoolInjection<CloudType>::MeltPoolInjection
     epsilonName_(im.epsilonName_),
     alphaMin_(im.alphaMin_),
     epsMin_(im.epsMin_),
+    axisPoint_(im.axisPoint_),
+    axisVelocity_(im.axisVelocity_),
+    radialEdges_(im.radialEdges_),
+    radialWeights_(im.radialWeights_),
     duration_(im.duration_),
     maxParcels_(im.maxParcels_),
     haveU0_(im.haveU0_),
