@@ -92,6 +92,13 @@ class magneticField
         //- MHD.rotationPlane: xy | xz | yz  (uniform + RMF only)
         word rotationPlane_;
 
+        //- MHD.alternating: B oscillates along staticField_ instead of
+        //  rotating in rotationPlane_. Must be read here, not just by the
+        //  solver: this class rebuilds B independently, so a flag it does not
+        //  know about silently gives the cloud a different field from the one
+        //  the momentum equation applied.
+        bool alternating_;
+
         //- MHD.staticField, normalised (uniform + DC only)
         vector staticField_;
 

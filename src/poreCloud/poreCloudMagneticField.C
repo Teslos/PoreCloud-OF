@@ -15,6 +15,7 @@ Foam::poreCloud::magneticField::magneticField(const fvMesh& mesh)
     B0_(0),
     omega_(0),
     rotationPlane_("xz"),
+    alternating_(false),
     staticField_(1, 0, 0),
     coreRadius_(3.0e-5),
     axisPoint_(mesh.bounds().midpoint()),
@@ -68,6 +69,7 @@ Foam::poreCloud::magneticField::magneticField(const fvMesh& mesh)
 
         // Normalised at read time, exactly as the solver does, so that B0
         // alone sets the magnitude.
+        alternating_ = mhd.getOrDefault<Switch>("alternating", false);
         staticField_ = mhd.getOrDefault<vector>("staticField", vector(1, 0, 0));
         const scalar magStatic = mag(staticField_);
         if (magStatic > SMALL)
@@ -141,6 +143,20 @@ void Foam::poreCloud::magneticField::buildUniform(const scalar t)
     {
         // Static DC field
         Bvec = B0_*staticField_;
+    }
+    else if (alternating_)
+    {
+        // AC: B oscillates along the fixed staticField_ axis rather than
+        // rotating. rotationPlane_ is not consulted - mirrors UEqn.H.
+        //
+        // This branch is not cosmetic. Without it an AC case, which sets both
+        // frequency and rotationPlane, fell through to the RMF branch below
+        // and handed the cloud a rotating field. For staticField (0 1 0) that
+        // turned an exactly-zero vertical exclusion force - (J x B)_y vanishes
+        // when B is along y - into a spurious one of the same order as F_x,
+        // making the run look like it produced vertical force when the
+        // momentum equation applied none.
+        Bvec = B0_*Foam::cos(omega_*t)*staticField_;
     }
     else
     {
@@ -218,6 +234,11 @@ void Foam::poreCloud::magneticField::info() const
     else if (omega_ <= SMALL)
     {
         Info<< "    DC direction: " << staticField_ << " (normalised)" << nl;
+    }
+    else if (alternating_)
+    {
+        Info<< "    AC axis    : " << staticField_ << " (normalised)"
+            << ", omega = " << omega_ << " rad/s" << nl;
     }
     else
     {
