@@ -8,10 +8,22 @@
 #
 # Run it from a clone of PoreCloud-OF:
 #
-#   git clone git@github.com:Teslos/PoreCloud-OF.git
+#   git clone https://github.com/Teslos/PoreCloud-OF.git
 #   ./PoreCloud-OF/scripts/bootstrapWorkstation.sh
 #
 #   ... verify     just re-run the checks
+#
+# CREDENTIALS. Two of the four repos are public over https and need none;
+# mhd-laserbeamfoam-solver and mhd-openfoam are private, so by default they
+# need an SSH key for github.com and ssh.gitlab.empa.ch respectively.
+#
+# If the new machine has no such keys yet, clone from the OLD machine instead --
+# git over ssh to a filesystem path works, and an AD password is enough:
+#
+#   FROM_HOST=thl06710 ./PoreCloud-OF/scripts/bootstrapWorkstation.sh
+#
+# That asks for the password once per repo and needs no GitHub or GitLab access
+# at all. Set FROM_HOST_HOME if the old machine's home is not /home/$USER.
 #
 # Deliberately NOT set -e: the apt and build phases each report their own
 # status, and one missing optional package should not abort the rest.
@@ -28,6 +40,9 @@ if [ -d "$SELFREPO/.git" ] && [ -f "$SELFREPO/src/poreCloud/poreCloudMagneticFie
 else
     PCREPO=""          # set to $PROJ/PoreCloud-OF once provision_repos clones it
 fi
+# Clone from this host's filesystem instead of from the forges. Empty = forges.
+FROM_HOST="${FROM_HOST:-}"
+FROM_HOST_HOME="${FROM_HOST_HOME:-/home/$USER}"
 FOAM_BASHRC=/usr/lib/openfoam/openfoam2506/etc/bashrc
 PROJ="$HOME/openfoam_projects"
 VENV="$HOME/.venvs/mhd-paper-analysis"
@@ -96,7 +111,22 @@ provision_venv() {
 }
 
 # --------------------------------------------------------------- 5. clones
-clone() {  # clone <url> <dest> <branch>
+
+# Pick the URL to clone from. With FROM_HOST set, everything comes off the old
+# machine over ssh, which needs no forge credentials -- git clones happily from
+# a filesystem path on a remote host. Otherwise prefer https where the repo is
+# public (no key needed) and fall back to ssh where it is not.
+url_for() {  # url_for <remote-subdir-name> <https-url-or-empty> <ssh-url>
+    if [ -n "$FROM_HOST" ]; then
+        printf '%s:%s/%s\n' "$FROM_HOST" "$FROM_HOST_HOME" "$1"
+    elif [ -n "$2" ]; then
+        printf '%s\n' "$2"
+    else
+        printf '%s\n' "$3"
+    fi
+}
+
+clone() {  # clone <url> <branch> <dest>
     if [ -d "$3/.git" ]; then
         ok "$(basename "$3") present; pulling"
         git -C "$3" pull --ff-only 2>&1 | tail -1
@@ -111,22 +141,30 @@ clone() {  # clone <url> <dest> <branch>
 provision_repos() {
     say "repositories"
     mkdir -p "$PROJ"
-    clone git@github.com:Coolnesss/mhd-laserbeamfoam-solver.git azimuthal-field "$HOME/mhd-laserbeamfoam-solver"
+    [ -n "$FROM_HOST" ] && ok "cloning from $FROM_HOST:$FROM_HOST_HOME (no forge credentials needed)"
+    # Private on GitHub -- no https fallback.
+    clone "$(url_for mhd-laserbeamfoam-solver '' git@github.com:Coolnesss/mhd-laserbeamfoam-solver.git)" \
+          azimuthal-field "$HOME/mhd-laserbeamfoam-solver"
     if [ -n "$PCREPO" ]; then
         ok "PoreCloud-OF: using the clone this script was run from ($PCREPO)"
         git -C "$PCREPO" pull --ff-only 2>&1 | tail -1
     else
         PCREPO="$PROJ/PoreCloud-OF"
-        clone git@github.com:Teslos/PoreCloud-OF.git master "$PCREPO"
+        clone "$(url_for openfoam_projects/PoreCloud-OF \
+                  https://github.com/Teslos/PoreCloud-OF.git \
+                  git@github.com:Teslos/PoreCloud-OF.git)" master "$PCREPO"
     fi
-    clone git@github.com:Teslos/PoreTracker-OF.git             main            "$PROJ/PoreTracker-OF"
+    clone "$(url_for openfoam_projects/PoreTracker-OF \
+              https://github.com/Teslos/PoreTracker-OF.git \
+              git@github.com:Teslos/PoreTracker-OF.git)" main "$PROJ/PoreTracker-OF"
 
     # mhd-openfoam tracks a 46 MB constant/polyMesh that blockMesh regenerates,
     # so it is excluded at checkout rather than downloaded and deleted.
     local m="$HOME/mhd-openfoam"
     if [ ! -d "$m/.git" ]; then
         git clone --depth 1 --branch experimental --filter=blob:none --sparse \
-            git@ssh.gitlab.empa.ch:intelligent-manufacturing-group/mhd-openfoam.git "$m" \
+            "$(url_for mhd-openfoam '' \
+               git@ssh.gitlab.empa.ch:intelligent-manufacturing-group/mhd-openfoam.git)" "$m" \
           && git -C "$m" sparse-checkout set --no-cone '/*' '!/constant/polyMesh' \
           || bad "mhd-openfoam clone failed (Empa GitLab reachable? SSH key present?)"
     else
@@ -156,8 +194,12 @@ install_inputs() {
     ok "~/results/poreCloud-{data,cases} -> the clone"
     printf '  note  cases carry system/ + constant/ only. To run one:\n'
     printf '          cd <case> && blockMesh && cp -r ../initial-common 0 && setFields\n'
-    printf '  note  mhd-openfoam working-tree changes are NOT in git. If the old\n'
-    printf '        machine had any, move them across yourself.\n'
+    printf '  note  mhd-openfoam working-tree changes are NOT in git. As of\n'
+    printf '        2026-09-28 the old machine has five: constant/transportProperties,\n'
+    printf '        pore_coords.json, system/controlDict, system/setFieldsDict.pore,\n'
+    printf '        and the untracked experiment/ directory. They are in\n'
+    printf '        mhd-openfoam-wip.tar.gz on the old machine; unpack it over\n'
+    printf '        ~/mhd-openfoam after the clone if you want them.\n'
 }
 
 # --------------------------------------------------------------- 8. verify
@@ -197,6 +239,13 @@ verify() {
         && ok "poreCloudReport tests" || bad "poreCloudReport tests"
     ( cd "$PCREPO" && python3 scripts/test_poreCloudFieldSurvey.py >/dev/null 2>&1 ) \
         && ok "poreCloudFieldSurvey tests" || bad "poreCloudFieldSurvey tests"
+    # Needs numpy only, so it runs under the system python like the other two.
+    # It regenerates both seeding anchor sets from data/, which also proves the
+    # curated CSVs survived the clone -- .gitignore excludes *.csv and only a
+    # scoped negation lets data/ through.
+    ( cd "$PCREPO" && python3 scripts/test_poreSeedingFromData.py >/dev/null 2>&1 ) \
+        && ok "poreSeedingFromData tests (seeding matches the shipped data)" \
+        || bad "poreSeedingFromData tests"
 
     "$VENV/bin/python3" -c 'import pandas, fitz' 2>/dev/null \
         && ok "venv: pandas + pymupdf import" || bad "venv imports"
