@@ -29,6 +29,17 @@ import poreSeedingFromData as M  # noqa: E402
 IN_USE = [0.31264, 0.12417, 0.10200, 0.22395, 0.19290, 0.04435]
 SUMMARIES = os.path.join(REPO, "data", "poretracker-summaries")
 
+# The ten in cases/poreCloud-rmf-xy-0.2T-expbyz, from experimental condition
+# `byz` (= sim XY, see data/experimental/README.md on the axis permutation).
+EXP_BYZ_IN_USE = [0.11864, 0.15424, 0.14576, 0.07627, 0.09492,
+                  0.13390, 0.08644, 0.08136, 0.06610, 0.04237]
+EXP_BYZ_EDGES = ["0", "25e-6", "50e-6", "75e-6", "100e-6", "125e-6",
+                 "150e-6", "175e-6", "200e-6", "225e-6", "250e-6"]
+EXP_BIRTHS = os.path.join(REPO, "data", "experimental", "pore_births.csv")
+EXP_BYZ_DICT = os.path.join(
+    REPO, "cases", "poreCloud-rmf-xy-0.2T-expbyz",
+    "constant", "poreCloudProperties")
+
 
 def run(args):
     buf = io.StringIO()
@@ -91,6 +102,63 @@ class PooledVoFWeights(unittest.TestCase):
         counts = eval(out.split("per-bin counts:")[1].split("\n")[0])
         self.assertEqual(sum(counts), 451)
         self.assertEqual(counts, [141, 56, 46, 101, 87, 20])
+
+
+class ExperimentalByzWeights(unittest.TestCase):
+    """The second anchor: the experimental XY seeding, from the shipped CSV.
+
+    Separate from the VoF anchor above because it exercises a different path -
+    a radius column given directly (spot welds, so there is no moving axis) and
+    a non-default outer edge chosen from the melt pool rather than from the
+    data.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        if not os.path.exists(EXP_BIRTHS):
+            raise unittest.SkipTest(f"no {EXP_BIRTHS}")
+        import csv
+        rows = []
+        with open(EXP_BIRTHS, newline="") as fh:
+            for r in csv.DictReader(fh):
+                # The file is CRLF; DictReader in text mode handles that, but
+                # strip anyway so a re-export in either line ending still works.
+                if r["condition"].strip() == "byz" and int(r["laser_on"]) == 1:
+                    rows.append((r["r_um"].strip(),))
+        cls.path = write_csv(rows, ["r_um"])
+        cls.n = len(rows)
+
+    @classmethod
+    def tearDownClass(cls):
+        os.unlink(cls.path)
+
+    def _run(self):
+        return run([self.path, "--col", "r=r_um", "--scale-um",
+                    "--edges", *EXP_BYZ_EDGES, "--i-have-birth-data"])
+
+    def test_pool_size(self):
+        self.assertEqual(self.n, 689)
+
+    def test_reproduces_the_weights_in_the_case(self):
+        line = next(l for l in self._run().splitlines()
+                    if l.strip().startswith("weights"))
+        got = [float(x) for x in line.split("(")[1].split(")")[0].split()]
+        np.testing.assert_allclose(got, EXP_BYZ_IN_USE, atol=5e-6)
+
+    def test_99_births_fall_outside_the_pool(self):
+        """14.4% of measured byz births are beyond the 230 um pool."""
+        out = self._run()
+        self.assertIn("590 births inside 250 um", out)
+        self.assertIn("99 dropped beyond it", out)
+
+    def test_case_dictionary_carries_these_numbers(self):
+        """Catches the dictionary being hand-edited away from the data."""
+        if not os.path.exists(EXP_BYZ_DICT):
+            self.skipTest("case not present")
+        with open(EXP_BYZ_DICT) as fh:
+            txt = fh.read()
+        for w in EXP_BYZ_IN_USE:
+            self.assertIn(f"{w:.5f}", txt)
 
 
 class MovingAxis(unittest.TestCase):

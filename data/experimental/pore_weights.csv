@@ -1,0 +1,489 @@
+condition,field_direction,sim_label,quantity,bin_lo_m,bin_hi_m,count,weight
+ALL,all conditions pooled,,r,0,2.5e-05,469,0.071298
+ALL,all conditions pooled,,r,2.5e-05,5e-05,572,0.086957
+ALL,all conditions pooled,,r,5e-05,7.5e-05,521,0.079203
+ALL,all conditions pooled,,r,7.5e-05,0.0001,556,0.084524
+ALL,all conditions pooled,,r,0.0001,0.000125,508,0.077227
+ALL,all conditions pooled,,r,0.000125,0.00015,545,0.082852
+ALL,all conditions pooled,,r,0.00015,0.000175,524,0.079659
+ALL,all conditions pooled,,r,0.000175,0.0002,570,0.086652
+ALL,all conditions pooled,,r,0.0002,0.000225,419,0.063697
+ALL,all conditions pooled,,r,0.000225,0.00025,320,0.048647
+ALL,all conditions pooled,,r,0.00025,0.000275,294,0.044694
+ALL,all conditions pooled,,r,0.000275,0.0003,243,0.036941
+ALL,all conditions pooled,,r,0.0003,0.000325,193,0.029340
+ALL,all conditions pooled,,r,0.000325,0.00035,165,0.025084
+ALL,all conditions pooled,,r,0.00035,0.000375,101,0.015354
+ALL,all conditions pooled,,r,0.000375,0.0004,128,0.019459
+ALL,all conditions pooled,,r,0.0004,0.000425,102,0.015506
+ALL,all conditions pooled,,r,0.000425,0.00045,90,0.013682
+ALL,all conditions pooled,,r,0.00045,0.000475,54,0.008209
+ALL,all conditions pooled,,r,0.000475,0.0005,69,0.010490
+ALL,all conditions pooled,,r,0.0005,0.000525,23,0.003497
+ALL,all conditions pooled,,r,0.000525,0.00055,13,0.001976
+ALL,all conditions pooled,,r,0.00055,0.000575,2,0.000304
+ALL,all conditions pooled,,r,0.000575,0.0006,1,0.000152
+ALL,all conditions pooled,,r,0.0006,0.000625,2,0.000304
+ALL,all conditions pooled,,r,0.000625,0.00065,7,0.001064
+ALL,all conditions pooled,,r,0.00065,0.000675,10,0.001520
+ALL,all conditions pooled,,r,0.000675,0.0007,2,0.000304
+ALL,all conditions pooled,,r,0.0007,0.000725,12,0.001824
+ALL,all conditions pooled,,r,0.000725,0.00075,6,0.000912
+ALL,all conditions pooled,,r,0.00075,0.000775,13,0.001976
+ALL,all conditions pooled,,r,0.000775,0.0008,7,0.001064
+ALL,all conditions pooled,,r,0.0008,0.000825,2,0.000304
+ALL,all conditions pooled,,r,0.000825,0.00085,18,0.002736
+ALL,all conditions pooled,,r,0.00085,0.000875,7,0.001064
+ALL,all conditions pooled,,r,0.000875,0.0009,2,0.000304
+ALL,all conditions pooled,,r,0.0009,0.000925,0,0.000000
+ALL,all conditions pooled,,r,0.000925,0.00095,0,0.000000
+ALL,all conditions pooled,,r,0.00095,0.000975,0,0.000000
+ALL,all conditions pooled,,r,0.000975,0.001,2,0.000304
+ALL,all conditions pooled,,r,0.001,0.001025,0,0.000000
+ALL,all conditions pooled,,r,0.001025,0.00105,3,0.000456
+ALL,all conditions pooled,,r,0.00105,0.001075,0,0.000000
+ALL,all conditions pooled,,r,0.001075,0.0011,0,0.000000
+ALL,all conditions pooled,,r,0.0011,0.001125,0,0.000000
+ALL,all conditions pooled,,r,0.001125,0.00115,0,0.000000
+ALL,all conditions pooled,,r,0.00115,0.001175,0,0.000000
+ALL,all conditions pooled,,r,0.001175,0.0012,0,0.000000
+ALL,all conditions pooled,,r,0.0012,0.001225,0,0.000000
+ALL,all conditions pooled,,r,0.001225,0.00125,0,0.000000
+ALL,all conditions pooled,,r,0.00125,0.001275,0,0.000000
+ALL,all conditions pooled,,r,0.001275,0.0013,0,0.000000
+ALL,all conditions pooled,,r,0.0013,0.001325,0,0.000000
+ALL,all conditions pooled,,r,0.001325,0.00135,0,0.000000
+ALL,all conditions pooled,,r,0.00135,0.001375,0,0.000000
+ALL,all conditions pooled,,r,0.001375,0.0014,0,0.000000
+ALL,all conditions pooled,,r,0.0014,0.001425,0,0.000000
+ALL,all conditions pooled,,r,0.001425,0.00145,3,0.000456
+ALL,all conditions pooled,,depth,0,2.5e-05,76,0.011642
+ALL,all conditions pooled,,depth,2.5e-05,5e-05,278,0.042586
+ALL,all conditions pooled,,depth,5e-05,7.5e-05,362,0.055453
+ALL,all conditions pooled,,depth,7.5e-05,0.0001,499,0.076440
+ALL,all conditions pooled,,depth,0.0001,0.000125,621,0.095129
+ALL,all conditions pooled,,depth,0.000125,0.00015,518,0.079350
+ALL,all conditions pooled,,depth,0.00015,0.000175,592,0.090686
+ALL,all conditions pooled,,depth,0.000175,0.0002,558,0.085478
+ALL,all conditions pooled,,depth,0.0002,0.000225,510,0.078125
+ALL,all conditions pooled,,depth,0.000225,0.00025,439,0.067249
+ALL,all conditions pooled,,depth,0.00025,0.000275,314,0.048100
+ALL,all conditions pooled,,depth,0.000275,0.0003,339,0.051930
+ALL,all conditions pooled,,depth,0.0003,0.000325,307,0.047028
+ALL,all conditions pooled,,depth,0.000325,0.00035,221,0.033854
+ALL,all conditions pooled,,depth,0.00035,0.000375,192,0.029412
+ALL,all conditions pooled,,depth,0.000375,0.0004,233,0.035692
+ALL,all conditions pooled,,depth,0.0004,0.000425,193,0.029565
+ALL,all conditions pooled,,depth,0.000425,0.00045,77,0.011795
+ALL,all conditions pooled,,depth,0.00045,0.000475,66,0.010110
+ALL,all conditions pooled,,depth,0.000475,0.0005,70,0.010723
+ALL,all conditions pooled,,depth,0.0005,0.000525,30,0.004596
+ALL,all conditions pooled,,depth,0.000525,0.00055,11,0.001685
+ALL,all conditions pooled,,depth,0.00055,0.000575,13,0.001991
+ALL,all conditions pooled,,depth,0.000575,0.0006,4,0.000613
+ALL,all conditions pooled,,depth,0.0006,0.000625,0,0.000000
+ALL,all conditions pooled,,depth,0.000625,0.00065,0,0.000000
+ALL,all conditions pooled,,depth,0.00065,0.000675,5,0.000766
+ALL,all conditions pooled,,diameter,0,2.5e-05,543,0.082548
+ALL,all conditions pooled,,diameter,2.5e-05,5e-05,2983,0.453481
+ALL,all conditions pooled,,diameter,5e-05,7.5e-05,1350,0.205230
+ALL,all conditions pooled,,diameter,7.5e-05,0.0001,770,0.117057
+ALL,all conditions pooled,,diameter,0.0001,0.000125,403,0.061265
+ALL,all conditions pooled,,diameter,0.000125,0.00015,265,0.040286
+ALL,all conditions pooled,,diameter,0.00015,0.000175,157,0.023867
+ALL,all conditions pooled,,diameter,0.000175,0.0002,59,0.008969
+ALL,all conditions pooled,,diameter,0.0002,0.000225,40,0.006081
+ALL,all conditions pooled,,diameter,0.000225,0.00025,8,0.001216
+bx,transverse,B||z,r,0,2.5e-05,74,0.061056
+bx,transverse,B||z,r,2.5e-05,5e-05,75,0.061881
+bx,transverse,B||z,r,5e-05,7.5e-05,89,0.073432
+bx,transverse,B||z,r,7.5e-05,0.0001,124,0.102310
+bx,transverse,B||z,r,0.0001,0.000125,85,0.070132
+bx,transverse,B||z,r,0.000125,0.00015,81,0.066832
+bx,transverse,B||z,r,0.00015,0.000175,84,0.069307
+bx,transverse,B||z,r,0.000175,0.0002,119,0.098185
+bx,transverse,B||z,r,0.0002,0.000225,71,0.058581
+bx,transverse,B||z,r,0.000225,0.00025,51,0.042079
+bx,transverse,B||z,r,0.00025,0.000275,45,0.037129
+bx,transverse,B||z,r,0.000275,0.0003,45,0.037129
+bx,transverse,B||z,r,0.0003,0.000325,26,0.021452
+bx,transverse,B||z,r,0.000325,0.00035,45,0.037129
+bx,transverse,B||z,r,0.00035,0.000375,20,0.016502
+bx,transverse,B||z,r,0.000375,0.0004,44,0.036304
+bx,transverse,B||z,r,0.0004,0.000425,34,0.028053
+bx,transverse,B||z,r,0.000425,0.00045,19,0.015677
+bx,transverse,B||z,r,0.00045,0.000475,14,0.011551
+bx,transverse,B||z,r,0.000475,0.0005,14,0.011551
+bx,transverse,B||z,r,0.0005,0.000525,4,0.003300
+bx,transverse,B||z,r,0.000525,0.00055,8,0.006601
+bx,transverse,B||z,r,0.00055,0.000575,1,0.000825
+bx,transverse,B||z,r,0.000575,0.0006,0,0.000000
+bx,transverse,B||z,r,0.0006,0.000625,1,0.000825
+bx,transverse,B||z,r,0.000625,0.00065,0,0.000000
+bx,transverse,B||z,r,0.00065,0.000675,3,0.002475
+bx,transverse,B||z,r,0.000675,0.0007,2,0.001650
+bx,transverse,B||z,r,0.0007,0.000725,1,0.000825
+bx,transverse,B||z,r,0.000725,0.00075,6,0.004950
+bx,transverse,B||z,r,0.00075,0.000775,10,0.008251
+bx,transverse,B||z,r,0.000775,0.0008,0,0.000000
+bx,transverse,B||z,r,0.0008,0.000825,1,0.000825
+bx,transverse,B||z,r,0.000825,0.00085,7,0.005776
+bx,transverse,B||z,r,0.00085,0.000875,7,0.005776
+bx,transverse,B||z,r,0.000875,0.0009,2,0.001650
+bx,transverse,B||z,depth,0,2.5e-05,5,0.004125
+bx,transverse,B||z,depth,2.5e-05,5e-05,50,0.041254
+bx,transverse,B||z,depth,5e-05,7.5e-05,69,0.056931
+bx,transverse,B||z,depth,7.5e-05,0.0001,134,0.110561
+bx,transverse,B||z,depth,0.0001,0.000125,170,0.140264
+bx,transverse,B||z,depth,0.000125,0.00015,115,0.094884
+bx,transverse,B||z,depth,0.00015,0.000175,106,0.087459
+bx,transverse,B||z,depth,0.000175,0.0002,89,0.073432
+bx,transverse,B||z,depth,0.0002,0.000225,67,0.055281
+bx,transverse,B||z,depth,0.000225,0.00025,58,0.047855
+bx,transverse,B||z,depth,0.00025,0.000275,32,0.026403
+bx,transverse,B||z,depth,0.000275,0.0003,53,0.043729
+bx,transverse,B||z,depth,0.0003,0.000325,63,0.051980
+bx,transverse,B||z,depth,0.000325,0.00035,42,0.034653
+bx,transverse,B||z,depth,0.00035,0.000375,27,0.022277
+bx,transverse,B||z,depth,0.000375,0.0004,27,0.022277
+bx,transverse,B||z,depth,0.0004,0.000425,52,0.042904
+bx,transverse,B||z,depth,0.000425,0.00045,16,0.013201
+bx,transverse,B||z,depth,0.00045,0.000475,17,0.014026
+bx,transverse,B||z,depth,0.000475,0.0005,18,0.014851
+bx,transverse,B||z,depth,0.0005,0.000525,1,0.000825
+bx,transverse,B||z,depth,0.000525,0.00055,1,0.000825
+bx,transverse,B||z,diameter,0,2.5e-05,98,0.080858
+bx,transverse,B||z,diameter,2.5e-05,5e-05,535,0.441419
+bx,transverse,B||z,diameter,5e-05,7.5e-05,289,0.238449
+bx,transverse,B||z,diameter,7.5e-05,0.0001,171,0.141089
+bx,transverse,B||z,diameter,0.0001,0.000125,64,0.052805
+bx,transverse,B||z,diameter,0.000125,0.00015,25,0.020627
+bx,transverse,B||z,diameter,0.00015,0.000175,18,0.014851
+bx,transverse,B||z,diameter,0.000175,0.0002,8,0.006601
+bx,transverse,B||z,diameter,0.0002,0.000225,4,0.003300
+bxy,horizontal plane,XZ,r,0,2.5e-05,9,0.036585
+bxy,horizontal plane,XZ,r,2.5e-05,5e-05,15,0.060976
+bxy,horizontal plane,XZ,r,5e-05,7.5e-05,20,0.081301
+bxy,horizontal plane,XZ,r,7.5e-05,0.0001,28,0.113821
+bxy,horizontal plane,XZ,r,0.0001,0.000125,21,0.085366
+bxy,horizontal plane,XZ,r,0.000125,0.00015,17,0.069106
+bxy,horizontal plane,XZ,r,0.00015,0.000175,30,0.121951
+bxy,horizontal plane,XZ,r,0.000175,0.0002,28,0.113821
+bxy,horizontal plane,XZ,r,0.0002,0.000225,38,0.154472
+bxy,horizontal plane,XZ,r,0.000225,0.00025,36,0.146341
+bxy,horizontal plane,XZ,r,0.00025,0.000275,2,0.008130
+bxy,horizontal plane,XZ,r,0.000275,0.0003,2,0.008130
+bxy,horizontal plane,XZ,depth,0,2.5e-05,3,0.012397
+bxy,horizontal plane,XZ,depth,2.5e-05,5e-05,19,0.078512
+bxy,horizontal plane,XZ,depth,5e-05,7.5e-05,16,0.066116
+bxy,horizontal plane,XZ,depth,7.5e-05,0.0001,17,0.070248
+bxy,horizontal plane,XZ,depth,0.0001,0.000125,30,0.123967
+bxy,horizontal plane,XZ,depth,0.000125,0.00015,20,0.082645
+bxy,horizontal plane,XZ,depth,0.00015,0.000175,23,0.095041
+bxy,horizontal plane,XZ,depth,0.000175,0.0002,19,0.078512
+bxy,horizontal plane,XZ,depth,0.0002,0.000225,25,0.103306
+bxy,horizontal plane,XZ,depth,0.000225,0.00025,18,0.074380
+bxy,horizontal plane,XZ,depth,0.00025,0.000275,20,0.082645
+bxy,horizontal plane,XZ,depth,0.000275,0.0003,16,0.066116
+bxy,horizontal plane,XZ,depth,0.0003,0.000325,6,0.024793
+bxy,horizontal plane,XZ,depth,0.000325,0.00035,6,0.024793
+bxy,horizontal plane,XZ,depth,0.00035,0.000375,4,0.016529
+bxy,horizontal plane,XZ,diameter,0,2.5e-05,39,0.158537
+bxy,horizontal plane,XZ,diameter,2.5e-05,5e-05,111,0.451220
+bxy,horizontal plane,XZ,diameter,5e-05,7.5e-05,24,0.097561
+bxy,horizontal plane,XZ,diameter,7.5e-05,0.0001,26,0.105691
+bxy,horizontal plane,XZ,diameter,0.0001,0.000125,26,0.105691
+bxy,horizontal plane,XZ,diameter,0.000125,0.00015,12,0.048780
+bxy,horizontal plane,XZ,diameter,0.00015,0.000175,1,0.004065
+bxy,horizontal plane,XZ,diameter,0.000175,0.0002,3,0.012195
+bxy,horizontal plane,XZ,diameter,0.0002,0.000225,1,0.004065
+bxy,horizontal plane,XZ,diameter,0.000225,0.00025,3,0.012195
+bxz,transverse-vertical plane,YZ,r,0,2.5e-05,72,0.099174
+bxz,transverse-vertical plane,YZ,r,2.5e-05,5e-05,77,0.106061
+bxz,transverse-vertical plane,YZ,r,5e-05,7.5e-05,41,0.056474
+bxz,transverse-vertical plane,YZ,r,7.5e-05,0.0001,54,0.074380
+bxz,transverse-vertical plane,YZ,r,0.0001,0.000125,71,0.097796
+bxz,transverse-vertical plane,YZ,r,0.000125,0.00015,55,0.075758
+bxz,transverse-vertical plane,YZ,r,0.00015,0.000175,55,0.075758
+bxz,transverse-vertical plane,YZ,r,0.000175,0.0002,59,0.081267
+bxz,transverse-vertical plane,YZ,r,0.0002,0.000225,58,0.079890
+bxz,transverse-vertical plane,YZ,r,0.000225,0.00025,52,0.071625
+bxz,transverse-vertical plane,YZ,r,0.00025,0.000275,26,0.035813
+bxz,transverse-vertical plane,YZ,r,0.000275,0.0003,31,0.042700
+bxz,transverse-vertical plane,YZ,r,0.0003,0.000325,36,0.049587
+bxz,transverse-vertical plane,YZ,r,0.000325,0.00035,15,0.020661
+bxz,transverse-vertical plane,YZ,r,0.00035,0.000375,1,0.001377
+bxz,transverse-vertical plane,YZ,r,0.000375,0.0004,14,0.019284
+bxz,transverse-vertical plane,YZ,r,0.0004,0.000425,5,0.006887
+bxz,transverse-vertical plane,YZ,r,0.000425,0.00045,1,0.001377
+bxz,transverse-vertical plane,YZ,r,0.00045,0.000475,2,0.002755
+bxz,transverse-vertical plane,YZ,r,0.000475,0.0005,1,0.001377
+bxz,transverse-vertical plane,YZ,depth,0,2.5e-05,9,0.012658
+bxz,transverse-vertical plane,YZ,depth,2.5e-05,5e-05,26,0.036568
+bxz,transverse-vertical plane,YZ,depth,5e-05,7.5e-05,21,0.029536
+bxz,transverse-vertical plane,YZ,depth,7.5e-05,0.0001,44,0.061885
+bxz,transverse-vertical plane,YZ,depth,0.0001,0.000125,63,0.088608
+bxz,transverse-vertical plane,YZ,depth,0.000125,0.00015,73,0.102672
+bxz,transverse-vertical plane,YZ,depth,0.00015,0.000175,87,0.122363
+bxz,transverse-vertical plane,YZ,depth,0.000175,0.0002,73,0.102672
+bxz,transverse-vertical plane,YZ,depth,0.0002,0.000225,54,0.075949
+bxz,transverse-vertical plane,YZ,depth,0.000225,0.00025,60,0.084388
+bxz,transverse-vertical plane,YZ,depth,0.00025,0.000275,35,0.049226
+bxz,transverse-vertical plane,YZ,depth,0.000275,0.0003,25,0.035162
+bxz,transverse-vertical plane,YZ,depth,0.0003,0.000325,40,0.056259
+bxz,transverse-vertical plane,YZ,depth,0.000325,0.00035,32,0.045007
+bxz,transverse-vertical plane,YZ,depth,0.00035,0.000375,17,0.023910
+bxz,transverse-vertical plane,YZ,depth,0.000375,0.0004,31,0.043601
+bxz,transverse-vertical plane,YZ,depth,0.0004,0.000425,11,0.015471
+bxz,transverse-vertical plane,YZ,depth,0.000425,0.00045,1,0.001406
+bxz,transverse-vertical plane,YZ,depth,0.00045,0.000475,0,0.000000
+bxz,transverse-vertical plane,YZ,depth,0.000475,0.0005,8,0.011252
+bxz,transverse-vertical plane,YZ,depth,0.0005,0.000525,1,0.001406
+bxz,transverse-vertical plane,YZ,diameter,0,2.5e-05,64,0.088154
+bxz,transverse-vertical plane,YZ,diameter,2.5e-05,5e-05,291,0.400826
+bxz,transverse-vertical plane,YZ,diameter,5e-05,7.5e-05,190,0.261708
+bxz,transverse-vertical plane,YZ,diameter,7.5e-05,0.0001,89,0.122590
+bxz,transverse-vertical plane,YZ,diameter,0.0001,0.000125,45,0.061983
+bxz,transverse-vertical plane,YZ,diameter,0.000125,0.00015,27,0.037190
+bxz,transverse-vertical plane,YZ,diameter,0.00015,0.000175,14,0.019284
+bxz,transverse-vertical plane,YZ,diameter,0.000175,0.0002,4,0.005510
+bxz,transverse-vertical plane,YZ,diameter,0.0002,0.000225,2,0.002755
+by,scan,B||x,r,0,2.5e-05,54,0.057447
+by,scan,B||x,r,2.5e-05,5e-05,85,0.090426
+by,scan,B||x,r,5e-05,7.5e-05,60,0.063830
+by,scan,B||x,r,7.5e-05,0.0001,84,0.089362
+by,scan,B||x,r,0.0001,0.000125,94,0.100000
+by,scan,B||x,r,0.000125,0.00015,91,0.096809
+by,scan,B||x,r,0.00015,0.000175,96,0.102128
+by,scan,B||x,r,0.000175,0.0002,93,0.098936
+by,scan,B||x,r,0.0002,0.000225,43,0.045745
+by,scan,B||x,r,0.000225,0.00025,38,0.040426
+by,scan,B||x,r,0.00025,0.000275,43,0.045745
+by,scan,B||x,r,0.000275,0.0003,33,0.035106
+by,scan,B||x,r,0.0003,0.000325,13,0.013830
+by,scan,B||x,r,0.000325,0.00035,10,0.010638
+by,scan,B||x,r,0.00035,0.000375,12,0.012766
+by,scan,B||x,r,0.000375,0.0004,17,0.018085
+by,scan,B||x,r,0.0004,0.000425,26,0.027660
+by,scan,B||x,r,0.000425,0.00045,19,0.020213
+by,scan,B||x,r,0.00045,0.000475,20,0.021277
+by,scan,B||x,r,0.000475,0.0005,3,0.003191
+by,scan,B||x,r,0.0005,0.000525,5,0.005319
+by,scan,B||x,r,0.000525,0.00055,1,0.001064
+by,scan,B||x,depth,0,2.5e-05,15,0.015991
+by,scan,B||x,depth,2.5e-05,5e-05,35,0.037313
+by,scan,B||x,depth,5e-05,7.5e-05,40,0.042644
+by,scan,B||x,depth,7.5e-05,0.0001,57,0.060768
+by,scan,B||x,depth,0.0001,0.000125,53,0.056503
+by,scan,B||x,depth,0.000125,0.00015,64,0.068230
+by,scan,B||x,depth,0.00015,0.000175,67,0.071429
+by,scan,B||x,depth,0.000175,0.0002,63,0.067164
+by,scan,B||x,depth,0.0002,0.000225,73,0.077825
+by,scan,B||x,depth,0.000225,0.00025,81,0.086354
+by,scan,B||x,depth,0.00025,0.000275,36,0.038380
+by,scan,B||x,depth,0.000275,0.0003,96,0.102345
+by,scan,B||x,depth,0.0003,0.000325,54,0.057569
+by,scan,B||x,depth,0.000325,0.00035,23,0.024520
+by,scan,B||x,depth,0.00035,0.000375,20,0.021322
+by,scan,B||x,depth,0.000375,0.0004,60,0.063966
+by,scan,B||x,depth,0.0004,0.000425,64,0.068230
+by,scan,B||x,depth,0.000425,0.00045,6,0.006397
+by,scan,B||x,depth,0.00045,0.000475,11,0.011727
+by,scan,B||x,depth,0.000475,0.0005,16,0.017058
+by,scan,B||x,depth,0.0005,0.000525,4,0.004264
+by,scan,B||x,diameter,0,2.5e-05,49,0.052128
+by,scan,B||x,diameter,2.5e-05,5e-05,488,0.519149
+by,scan,B||x,diameter,5e-05,7.5e-05,172,0.182979
+by,scan,B||x,diameter,7.5e-05,0.0001,73,0.077660
+by,scan,B||x,diameter,0.0001,0.000125,51,0.054255
+by,scan,B||x,diameter,0.000125,0.00015,61,0.064894
+by,scan,B||x,diameter,0.00015,0.000175,25,0.026596
+by,scan,B||x,diameter,0.000175,0.0002,11,0.011702
+by,scan,B||x,diameter,0.0002,0.000225,10,0.010638
+byz,scan-vertical plane,XY,r,0,2.5e-05,70,0.101597
+byz,scan-vertical plane,XY,r,2.5e-05,5e-05,90,0.130624
+byz,scan-vertical plane,XY,r,5e-05,7.5e-05,87,0.126270
+byz,scan-vertical plane,XY,r,7.5e-05,0.0001,45,0.065312
+byz,scan-vertical plane,XY,r,0.0001,0.000125,56,0.081277
+byz,scan-vertical plane,XY,r,0.000125,0.00015,79,0.114659
+byz,scan-vertical plane,XY,r,0.00015,0.000175,51,0.074020
+byz,scan-vertical plane,XY,r,0.000175,0.0002,48,0.069666
+byz,scan-vertical plane,XY,r,0.0002,0.000225,39,0.056604
+byz,scan-vertical plane,XY,r,0.000225,0.00025,25,0.036284
+byz,scan-vertical plane,XY,r,0.00025,0.000275,60,0.087083
+byz,scan-vertical plane,XY,r,0.000275,0.0003,17,0.024673
+byz,scan-vertical plane,XY,r,0.0003,0.000325,8,0.011611
+byz,scan-vertical plane,XY,r,0.000325,0.00035,1,0.001451
+byz,scan-vertical plane,XY,r,0.00035,0.000375,0,0.000000
+byz,scan-vertical plane,XY,r,0.000375,0.0004,13,0.018868
+byz,scan-vertical plane,XY,depth,0,2.5e-05,18,0.026354
+byz,scan-vertical plane,XY,depth,2.5e-05,5e-05,39,0.057101
+byz,scan-vertical plane,XY,depth,5e-05,7.5e-05,61,0.089312
+byz,scan-vertical plane,XY,depth,7.5e-05,0.0001,76,0.111274
+byz,scan-vertical plane,XY,depth,0.0001,0.000125,87,0.127379
+byz,scan-vertical plane,XY,depth,0.000125,0.00015,68,0.099561
+byz,scan-vertical plane,XY,depth,0.00015,0.000175,31,0.045388
+byz,scan-vertical plane,XY,depth,0.000175,0.0002,87,0.127379
+byz,scan-vertical plane,XY,depth,0.0002,0.000225,63,0.092240
+byz,scan-vertical plane,XY,depth,0.000225,0.00025,44,0.064422
+byz,scan-vertical plane,XY,depth,0.00025,0.000275,44,0.064422
+byz,scan-vertical plane,XY,depth,0.000275,0.0003,28,0.040996
+byz,scan-vertical plane,XY,depth,0.0003,0.000325,14,0.020498
+byz,scan-vertical plane,XY,depth,0.000325,0.00035,17,0.024890
+byz,scan-vertical plane,XY,depth,0.00035,0.000375,0,0.000000
+byz,scan-vertical plane,XY,depth,0.000375,0.0004,6,0.008785
+byz,scan-vertical plane,XY,diameter,0,2.5e-05,75,0.108853
+byz,scan-vertical plane,XY,diameter,2.5e-05,5e-05,302,0.438316
+byz,scan-vertical plane,XY,diameter,5e-05,7.5e-05,108,0.156749
+byz,scan-vertical plane,XY,diameter,7.5e-05,0.0001,96,0.139332
+byz,scan-vertical plane,XY,diameter,0.0001,0.000125,37,0.053701
+byz,scan-vertical plane,XY,diameter,0.000125,0.00015,27,0.039187
+byz,scan-vertical plane,XY,diameter,0.00015,0.000175,35,0.050798
+byz,scan-vertical plane,XY,diameter,0.000175,0.0002,9,0.013062
+bz,vertical,B||y,r,0,2.5e-05,81,0.080040
+bz,vertical,B||y,r,2.5e-05,5e-05,101,0.099802
+bz,vertical,B||y,r,5e-05,7.5e-05,77,0.076087
+bz,vertical,B||y,r,7.5e-05,0.0001,80,0.079051
+bz,vertical,B||y,r,0.0001,0.000125,76,0.075099
+bz,vertical,B||y,r,0.000125,0.00015,99,0.097826
+bz,vertical,B||y,r,0.00015,0.000175,83,0.082016
+bz,vertical,B||y,r,0.000175,0.0002,105,0.103755
+bz,vertical,B||y,r,0.0002,0.000225,61,0.060277
+bz,vertical,B||y,r,0.000225,0.00025,37,0.036561
+bz,vertical,B||y,r,0.00025,0.000275,38,0.037549
+bz,vertical,B||y,r,0.000275,0.0003,26,0.025692
+bz,vertical,B||y,r,0.0003,0.000325,38,0.037549
+bz,vertical,B||y,r,0.000325,0.00035,22,0.021739
+bz,vertical,B||y,r,0.00035,0.000375,29,0.028656
+bz,vertical,B||y,r,0.000375,0.0004,7,0.006917
+bz,vertical,B||y,r,0.0004,0.000425,8,0.007905
+bz,vertical,B||y,r,0.000425,0.00045,14,0.013834
+bz,vertical,B||y,r,0.00045,0.000475,12,0.011858
+bz,vertical,B||y,r,0.000475,0.0005,14,0.013834
+bz,vertical,B||y,r,0.0005,0.000525,4,0.003953
+bz,vertical,B||y,depth,0,2.5e-05,17,0.016865
+bz,vertical,B||y,depth,2.5e-05,5e-05,47,0.046627
+bz,vertical,B||y,depth,5e-05,7.5e-05,45,0.044643
+bz,vertical,B||y,depth,7.5e-05,0.0001,70,0.069444
+bz,vertical,B||y,depth,0.0001,0.000125,98,0.097222
+bz,vertical,B||y,depth,0.000125,0.00015,85,0.084325
+bz,vertical,B||y,depth,0.00015,0.000175,107,0.106151
+bz,vertical,B||y,depth,0.000175,0.0002,98,0.097222
+bz,vertical,B||y,depth,0.0002,0.000225,68,0.067460
+bz,vertical,B||y,depth,0.000225,0.00025,45,0.044643
+bz,vertical,B||y,depth,0.00025,0.000275,63,0.062500
+bz,vertical,B||y,depth,0.000275,0.0003,42,0.041667
+bz,vertical,B||y,depth,0.0003,0.000325,66,0.065476
+bz,vertical,B||y,depth,0.000325,0.00035,33,0.032738
+bz,vertical,B||y,depth,0.00035,0.000375,63,0.062500
+bz,vertical,B||y,depth,0.000375,0.0004,13,0.012897
+bz,vertical,B||y,depth,0.0004,0.000425,27,0.026786
+bz,vertical,B||y,depth,0.000425,0.00045,11,0.010913
+bz,vertical,B||y,depth,0.00045,0.000475,7,0.006944
+bz,vertical,B||y,depth,0.000475,0.0005,2,0.001984
+bz,vertical,B||y,depth,0.0005,0.000525,1,0.000992
+bz,vertical,B||y,diameter,0,2.5e-05,108,0.106719
+bz,vertical,B||y,diameter,2.5e-05,5e-05,542,0.535573
+bz,vertical,B||y,diameter,5e-05,7.5e-05,195,0.192688
+bz,vertical,B||y,diameter,7.5e-05,0.0001,80,0.079051
+bz,vertical,B||y,diameter,0.0001,0.000125,27,0.026680
+bz,vertical,B||y,diameter,0.000125,0.00015,34,0.033597
+bz,vertical,B||y,diameter,0.00015,0.000175,14,0.013834
+bz,vertical,B||y,diameter,0.000175,0.0002,3,0.002964
+bz,vertical,B||y,diameter,0.0002,0.000225,8,0.007905
+bz,vertical,B||y,diameter,0.000225,0.00025,1,0.000988
+no field,none,,r,0,2.5e-05,109,0.062179
+no field,none,,r,2.5e-05,5e-05,129,0.073588
+no field,none,,r,5e-05,7.5e-05,147,0.083856
+no field,none,,r,7.5e-05,0.0001,141,0.080434
+no field,none,,r,0.0001,0.000125,105,0.059897
+no field,none,,r,0.000125,0.00015,123,0.070165
+no field,none,,r,0.00015,0.000175,125,0.071306
+no field,none,,r,0.000175,0.0002,118,0.067313
+no field,none,,r,0.0002,0.000225,109,0.062179
+no field,none,,r,0.000225,0.00025,81,0.046207
+no field,none,,r,0.00025,0.000275,80,0.045636
+no field,none,,r,0.000275,0.0003,89,0.050770
+no field,none,,r,0.0003,0.000325,72,0.041072
+no field,none,,r,0.000325,0.00035,72,0.041072
+no field,none,,r,0.00035,0.000375,39,0.022248
+no field,none,,r,0.000375,0.0004,33,0.018825
+no field,none,,r,0.0004,0.000425,29,0.016543
+no field,none,,r,0.000425,0.00045,37,0.021107
+no field,none,,r,0.00045,0.000475,6,0.003423
+no field,none,,r,0.000475,0.0005,37,0.021107
+no field,none,,r,0.0005,0.000525,10,0.005705
+no field,none,,r,0.000525,0.00055,4,0.002282
+no field,none,,r,0.00055,0.000575,1,0.000570
+no field,none,,r,0.000575,0.0006,1,0.000570
+no field,none,,r,0.0006,0.000625,1,0.000570
+no field,none,,r,0.000625,0.00065,7,0.003993
+no field,none,,r,0.00065,0.000675,7,0.003993
+no field,none,,r,0.000675,0.0007,0,0.000000
+no field,none,,r,0.0007,0.000725,11,0.006275
+no field,none,,r,0.000725,0.00075,0,0.000000
+no field,none,,r,0.00075,0.000775,3,0.001711
+no field,none,,r,0.000775,0.0008,7,0.003993
+no field,none,,r,0.0008,0.000825,1,0.000570
+no field,none,,r,0.000825,0.00085,11,0.006275
+no field,none,,r,0.00085,0.000875,0,0.000000
+no field,none,,r,0.000875,0.0009,0,0.000000
+no field,none,,r,0.0009,0.000925,0,0.000000
+no field,none,,r,0.000925,0.00095,0,0.000000
+no field,none,,r,0.00095,0.000975,0,0.000000
+no field,none,,r,0.000975,0.001,2,0.001141
+no field,none,,r,0.001,0.001025,0,0.000000
+no field,none,,r,0.001025,0.00105,3,0.001711
+no field,none,,r,0.00105,0.001075,0,0.000000
+no field,none,,r,0.001075,0.0011,0,0.000000
+no field,none,,r,0.0011,0.001125,0,0.000000
+no field,none,,r,0.001125,0.00115,0,0.000000
+no field,none,,r,0.00115,0.001175,0,0.000000
+no field,none,,r,0.001175,0.0012,0,0.000000
+no field,none,,r,0.0012,0.001225,0,0.000000
+no field,none,,r,0.001225,0.00125,0,0.000000
+no field,none,,r,0.00125,0.001275,0,0.000000
+no field,none,,r,0.001275,0.0013,0,0.000000
+no field,none,,r,0.0013,0.001325,0,0.000000
+no field,none,,r,0.001325,0.00135,0,0.000000
+no field,none,,r,0.00135,0.001375,0,0.000000
+no field,none,,r,0.001375,0.0014,0,0.000000
+no field,none,,r,0.0014,0.001425,0,0.000000
+no field,none,,r,0.001425,0.00145,3,0.001711
+no field,none,,depth,0,2.5e-05,9,0.005190
+no field,none,,depth,2.5e-05,5e-05,62,0.035755
+no field,none,,depth,5e-05,7.5e-05,110,0.063437
+no field,none,,depth,7.5e-05,0.0001,101,0.058247
+no field,none,,depth,0.0001,0.000125,120,0.069204
+no field,none,,depth,0.000125,0.00015,93,0.053633
+no field,none,,depth,0.00015,0.000175,171,0.098616
+no field,none,,depth,0.000175,0.0002,129,0.074394
+no field,none,,depth,0.0002,0.000225,160,0.092272
+no field,none,,depth,0.000225,0.00025,133,0.076701
+no field,none,,depth,0.00025,0.000275,84,0.048443
+no field,none,,depth,0.000275,0.0003,79,0.045559
+no field,none,,depth,0.0003,0.000325,64,0.036909
+no field,none,,depth,0.000325,0.00035,68,0.039216
+no field,none,,depth,0.00035,0.000375,61,0.035179
+no field,none,,depth,0.000375,0.0004,96,0.055363
+no field,none,,depth,0.0004,0.000425,39,0.022491
+no field,none,,depth,0.000425,0.00045,43,0.024798
+no field,none,,depth,0.00045,0.000475,31,0.017878
+no field,none,,depth,0.000475,0.0005,26,0.014994
+no field,none,,depth,0.0005,0.000525,23,0.013264
+no field,none,,depth,0.000525,0.00055,10,0.005767
+no field,none,,depth,0.00055,0.000575,13,0.007497
+no field,none,,depth,0.000575,0.0006,4,0.002307
+no field,none,,depth,0.0006,0.000625,0,0.000000
+no field,none,,depth,0.000625,0.00065,0,0.000000
+no field,none,,depth,0.00065,0.000675,5,0.002884
+no field,none,,diameter,0,2.5e-05,110,0.062750
+no field,none,,diameter,2.5e-05,5e-05,714,0.407302
+no field,none,,diameter,5e-05,7.5e-05,372,0.212208
+no field,none,,diameter,7.5e-05,0.0001,235,0.134056
+no field,none,,diameter,0.0001,0.000125,153,0.087279
+no field,none,,diameter,0.000125,0.00015,79,0.045066
+no field,none,,diameter,0.00015,0.000175,50,0.028523
+no field,none,,diameter,0.000175,0.0002,21,0.011979
+no field,none,,diameter,0.0002,0.000225,15,0.008557
+no field,none,,diameter,0.000225,0.00025,4,0.002282

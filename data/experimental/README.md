@@ -1,69 +1,82 @@
-# Experimental pore data — drop files here
+# Experimental pore births — ESRF, AlSi10Mg 0.5 mm
 
-Nothing is here yet. The seeding currently shipped in `cases/*/constant/poreCloudProperties`
-is derived from the **resolved-VoF runs**, not from experiment — see
-`../poretracker-summaries/`. This directory is where experimental data replaces it.
+In-situ X-ray radiography, recorded 2025-11-14. **6,898 tracked pore births**,
+6,578 inside the laser window. Produced by `github.com/Teslos/yolo-pores`
+(`export_pore_births.py -d results/tiff`); the working copy lives in
+`mhd-openfoam/experiment/` and these are curated copies.
 
-## What to put here
-
-A CSV of pore **births**, one row per pore. Any column names; you map them on
-the command line. The useful columns:
-
-| quantity | needed for |
+| file | what |
 |---|---|
-| birth position — either a radius from the laser axis, or x and z | `radialSeeding.weights` |
-| birth time | only if the laser scans, so the axis position is known per pore |
-| diameter | `sizeDistribution` |
-| depth below the free surface | not consumed yet; record it if you have it |
+| `pore_births.csv` | one row per pore |
+| `pore_weights.csv` | normalised radial / depth / diameter histograms in SI metres, per condition and pooled as `ALL` |
+| `pore_births.md` | column dictionary and the full caveat list — **read it before fitting anything** |
 
-Then:
+Nine recordings: 100 W / 100 ms **spot** welds, 50,400 fps, 2.2 µm/px. One
+`nomf` pair plus one each of `bx bxy bxz by byz bz`, all 400 Hz alternating.
+Chosen because it is the only block with a verified 0.00 false-positive floor
+over 13,655 pre-laser frames.
 
-    python3 ../../scripts/poreSeedingFromData.py yourfile.csv \
-        --col x=X_um --col z=Z_um --col t=t_ms --col d=diam_um --scale-um \
-        --melt-volume 1.70e-11 --window 1e-3 \
+## The axis convention is a cyclic permutation — check `sim_label`
+
+The `condition` letters are the **experimental** convention. Simulation labels
+differ, and the two planes that contain the beam axis swap:
+
+| physical | experiment | simulation |
+|---|---|---|
+| transverse | `bx` | B∥z |
+| scan | `by` | B∥x |
+| vertical | `bz` | B∥y |
+| horizontal plane | `bxy` | **XZ** |
+| transverse-vertical plane | `bxz` | **YZ** |
+| scan-vertical plane | `byz` | **XY** |
+
+Both CSVs carry `field_direction` and `sim_label` columns. Use those, never the
+letters.
+
+## What has been used so far
+
+`cases/poreCloud-rmf-xy-0.2T-expbyz` takes its `radialSeeding` from condition
+`byz` (= sim XY, 689 births). `scripts/test_poreSeedingFromData.py` regenerates
+those weights from this directory, so the dictionary and the data cannot drift
+apart unnoticed.
+
+**Only the radial distribution was transferred.** The diameters were not, and
+should not be without a deliberate decision: mean measured pore volume is
+3.257e-13 m³ against 5.59e-15 m³ in the matched SS316L VoF runs — **58× larger**
+— which with the calibrated injection rate implies a 252% void fraction against
+the 0.83–2.53% the resolved runs measure. Aluminium at 100 W spot welds simply
+makes bigger pores than steel at 150 W scanning, and since the exclusion force
+scales as d³, importing the sizes would confound alloy with field.
+
+## Caveats that travel with any use of this data
+
+* **Regime.** Spot welds, aluminium. The simulations are 150 W at 36 mm/s on
+  SS316L. There is no scan, so a radius here is about a *static* axis.
+* **`birth` is first detection, not nucleation.** Recall ≈ 0.55 and a pore is
+  invisible inside the keyhole, so births are systematically late and the radial
+  histogram is biased **outward**.
+* **No z.** Radiography projects through the plate, so `r_um` is the in-plane
+  radius and a lower bound — tight, since 0.5 mm is the dimension along the beam.
+* **Diameters are truncated with pile-up.** Detector floor 20.6 µm; the 25–30 µm
+  bin holds 23% of all pores. Do not fit below ~35–40 µm.
+* **Time origin is good to ~20 ms.** Prefer `t_from_kh_end_ms` over `birth_t_ms`.
+* **`--min-life 5`**, not the 20 of the published fate tables; 43.7% of rows
+  would survive that cut. Filter on `life_frames` to match.
+
+## Regenerating a seeding block
+
+    ~/.venvs/mhd-paper-analysis/bin/python3 scripts/poreSeedingFromData.py \
+        <a CSV of r_um,d_um for one condition> --col r=r_um --scale-um \
+        --edges 0 25e-6 50e-6 75e-6 100e-6 125e-6 150e-6 175e-6 200e-6 225e-6 250e-6 \
         --i-have-birth-data
 
-It prints the `rate`, `radialSeeding` and `sizeDistribution` blocks ready to
-paste into `constant/poreCloudProperties`. `scripts/test_poreSeedingFromData.py`
-anchors it by regenerating the weights currently in use from the VoF summaries,
-so the script and the dictionaries cannot drift apart unnoticed.
+Pick the outer edge from the melt pool, not the data: the XY pool reaches 230 µm
+at the t = 1 ms restart, so 250 µm wastes no weight. Bins beyond the liquid get
+`binMult = 0` in `MeltPoolInjection.C` and their weight is silently discarded,
+lowering the effective injection rate.
 
-## The one distinction that decides whether the data is usable
+## Not included
 
-**Micro-CT of a finished track is the wrong measurement.** It records where the
-*surviving* pores came to rest — births already filtered by flotation, transport
-and capture at the solidification front. That filtering is exactly what a
-simulation seeded from this data would be trying to predict, so using it is
-circular and biased toward survivors.
-
-**In-situ X-ray radiography is the right one.** It times and locates nucleation
-events, which is what the injector needs.
-
-The script cannot tell them apart, so it refuses to guess: pass
-`--i-have-birth-data` or `--final-positions`. The second still works, and stamps
-the warning into the emitted comment so the provenance travels with the numbers.
-
-## Match the regime, not just the alloy
-
-These runs are **150 W at 36 mm/s** — slow, keyhole-welding conditions. Typical
-LPBF radiography is taken at 500–1000 mm/s, where pore formation is a different
-regime. Matching power and scan speed matters more than matching the alloy.
-
-## Why this would be worth doing
-
-Three known weaknesses in the current VoF-derived seeding that experimental data
-would fix:
-
-1. **The size distribution has a detection floor.** PoreTracker's
-   `MIN_PORE_CELLS 5` piles pores up at ~9.3 µm — which is why p5, p10 and p25
-   of that data are identical — and anything below ~12 µm is invisible to it.
-2. **The radial distribution is strongly field-dependent** and therefore not
-   transferable between configurations: χ² = 111.9 on 30 df, p < 0.0001 across
-   the seven matched cases. The weights in use pool all seven, which is
-   defensible for `rmf-yz` (χ² = 8.1, p = 0.15 against the others) and **not**
-   for the rest — `rmf-xz` puts 37.9% of births in the 80–100 µm bin against the
-   pooled 19.3%.
-3. **It inherits whatever the VoF solver gets wrong** about where pores form.
-
-Point 2 is why per-case experimental data, or per-case PoreTracker passes, are
-needed before seeding any configuration other than `rmf-yz`.
+The 1 mm campaign — 6 mm/s scanning welds on a re-used plate carrying 2–7
+pre-existing pores per frame, so most of its "births" are old pores drifting
+into view.
