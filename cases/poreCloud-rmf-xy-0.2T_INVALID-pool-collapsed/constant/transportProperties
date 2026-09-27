@@ -1,0 +1,82 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    format          ascii;
+    class           dictionary;
+    location        "constant";
+    object          phaseProperties;
+}
+
+interfaceTrackingScheme isoAdvector;
+
+phases          ( metal gas );
+
+metal
+{
+    transportModel  Newtonian;
+    nu              4.9e-07;
+    nuA             6.71677e-08;
+    nuE             2078.94;
+    rho             2670;
+    Tsolidus        830;
+    Tliquidus       870;
+    LatentHeat      387000;
+    beta            2.3e-05;
+    poly_kappa      ( 80 0.1 0 0 0 0 0 0 );
+    poly_cp         ( 730 0.5 0 0 0 0 0 0 );
+    elec_resistivity 2e-07;
+}
+
+gas
+{
+    transportModel  Newtonian;
+    nu              1.48e-05;
+    rho             1;
+    Tsolidus        1;
+    Tliquidus       10;
+    LatentHeat      1;
+    beta            4e-05;
+    poly_kappa      ( 0.04 0 0 0 0 0 0 0 );
+    poly_cp         ( 520 0 0 0 0 0 0 0 );
+}
+
+sigma           1.02;
+
+Marangoni_Constant -0.00031;
+
+p0              100000;
+
+Tvap            2743;
+
+Mm              0.027;
+
+LatentHeatVap   1.05e+07;
+
+emS             0.3;
+
+emL             0.12;
+
+hC              82;
+
+TRef            TRef [ 0 0 0 1 0 0 0 ] 300;
+
+MHD
+{
+    active          true;
+    B0              0.2;
+    frequency       4000;
+    rotationPlane   xy;
+    staticField     ( 1 0 0 );
+    SeebeckCoeffLiquid -2.5e-06;
+    SeebeckCoeffSolid -1.5e-06;
+}
+
+
+// ************************************************************************* //

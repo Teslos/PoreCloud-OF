@@ -1,0 +1,215 @@
+/*--------------------------------*- C++ -*----------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      poreCloudProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solution
+{
+    active          true;
+    coupled         false;          // one-way: bubbles read the melt only
+    transient       yes;
+    cellValueSourceCorrection no;
+
+    maxCo           0.3;
+
+    interpolationSchemes
+    {
+        rho             cell;
+        U               cellPoint;
+        mu              cell;
+        J_MHD           cellPoint;
+        gradT           cellPoint;
+        "poreCloud:B"   cellPoint;
+        curlUcDt        cellPoint;
+        DUcDt           cellPoint;
+    }
+
+    integrationSchemes
+    {
+        U               Euler;
+    }
+}
+
+constantProperties
+{
+    rho0            1.0;            // gas
+}
+
+subModels
+{
+    particleForces
+    {
+        gravity;
+        sphereDrag;
+        virtualMass { Cvm 0.5; }
+        pressureGradient { U U; }
+
+        leenovKolin
+        {
+            J                J_MHD;
+            exclusionCoeff   -1.5;
+            useSphereAverage true;
+        }
+
+        thermocapillary
+        {
+            gradT            gradT;
+            epsilon1         epsilon1;
+            epsMin           0.5;
+            useSphereAverage true;
+        }
+    }
+
+    injectionModels
+    {
+        melt
+        {
+            type            meltPoolInjection;
+            massTotal       0;
+            SOI             0.001;
+            duration        0.001;
+            parcelBasisType fixed;
+            nParticle       1;
+
+            // Nucleation rate per unit LIQUID volume, per second - not per
+            // cell and not per run.  The expected count is rate*V_melt*T.
+            //
+            // Calibrated against the resolved-VoF runs in
+            // results_matched_0.2T_f4000hz, which MEASURE this: their
+            // *_pores_summary.csv gives 3.3e4 - 1.05e5 pore births/s
+            // (median 9.2e4) over a melt volume of 1.70e-11 m3, i.e.
+            // rate = 1.9e15 - 6.2e15.  5.4e15 is that median.
+            //
+            // Do not raise this for better force statistics.  The cloud is
+            // one-way coupled, so extra parcels cost nothing in the flow and
+            // the temptation is real - but the void fraction they imply
+            // becomes nonsense and nothing in the solver objects.  1e17,
+            // used once here, put 2892 pores in the pool: 473% of the melt
+            // volume, against 0.83-2.53% in the resolved runs.  Sample the
+            // force field longer or over repeats instead.
+            rate            8.535e15;
+            alphaName       alpha.metal;
+            epsilonName     epsilon1;
+            alphaMin        0.5;
+            epsMin          0.5;
+            maxParcels      20000;
+
+            // Measured, not assumed: the histogram of pore diameters from
+            // the same resolved-VoF runs (452 pores, 7 cases).  Mean volume
+            // 5.59e-15 m3 against their 5.92e-15, within 5%.
+            //
+            // The first two bins are inflated by PoreTracker's detection
+            // floor - MIN_PORE_CELLS 5 piles pores up at ~9.3 um, which is
+            // why p5, p10 and p25 of that data are all identical.  Real
+            // pores below ~12 um exist but are not resolved there.  It
+            // matters little for the force, which scales as d^3 and is
+            // dominated by the reliable tail.
+            // Measured, not assumed: pore diameters from the resolved-VoF
+            // runs in results_matched_0.2T_f4000hz (452 pores, 7 cases).
+            //
+            // These are DENSITIES on a UNIFORM 2 um grid, not per-bin
+            // probabilities.  general with cumulative false makes OpenFOAM
+            // integrate the table trapezoidally (general.C:57-63), so the
+            // mass in an interval is y*dx - supply probability mass on
+            // unevenly spaced points and every wide bin is over-weighted by
+            // its width.  Doing exactly that put the mean bubble volume 2.9x
+            // too high, which a test run caught before it reached anything.
+            // Uniform spacing removes the ambiguity: trapezoidal mean volume
+            // 6.42e-15 m3 against the data's 5.92e-15, an 8 percent residual
+            // that is the trapezoid approximating a histogram.
+            //
+            // The first two entries are inflated by PoreTracker's detection
+            // floor (MIN_PORE_CELLS 5 piles pores up near 9.3 um, which is
+            // why p5, p10 and p25 of that data are identical).  Real pores
+            // below ~12 um exist but are not resolved there.  It matters
+            // little for the force, which scales as d^3.
+            sizeDistribution
+            {
+                type            general;
+                generalDistribution
+                {
+                    cumulative      false;
+                    distribution
+                    (
+                        (1.000e-05   0.36809)
+                        (1.200e-05   0.44329)
+                        (1.400e-05   0.09391)
+                        (1.600e-05   0.01154)
+                        (1.800e-05   0.00756)
+                        (2.000e-05   0.00557)
+                        (2.200e-05   0.00318)
+                        (2.400e-05   0.00159)
+                        (2.600e-05   0.00239)
+                        (2.800e-05   0.00318)
+                        (3.000e-05   0.00318)
+                        (3.200e-05   0.00318)
+                        (3.400e-05   0.00478)
+                        (3.600e-05   0.00358)
+                        (3.800e-05   0.00239)
+                        (4.000e-05   0.00119)
+                        (4.200e-05   0.00119)
+                        (4.400e-05   0.00239)
+                        (4.600e-05   0.00279)
+                        (4.800e-05   0.00358)
+                        (5.000e-05   0.00239)
+                        (5.200e-05   0.00358)
+                        (5.400e-05   0.00279)
+                        (5.600e-05   0.00358)
+                        (5.800e-05   0.00358)
+                        (6.000e-05   0.00318)
+                        (6.200e-05   0.00080)
+                        (6.400e-05   0.00239)
+                        (6.600e-05   0.00199)
+                        (6.800e-05   0.00279)
+                        (7.000e-05   0.00159)
+                        (7.200e-05   0.00080)
+                        (7.400e-05   0.00199)
+                    );
+                }
+            }
+        }
+    }
+
+    dispersionModel         none;
+    patchInteractionModel   none;
+    surfaceFilmModel        none;
+    stochasticCollisionModel none;
+}
+
+cloudFunctions
+{
+    solidificationCapture
+    {
+        type             solidificationCapture;
+        epsilonName      epsilon1;
+        captureThreshold 0.5;
+        allowRemelt      false;
+    }
+
+    poreForceReport
+    {
+        type            poreForceReport;
+
+        // One row per bubble per report, so the row count is
+        // nBubbles * nSteps/writeInterval.  This case runs at dt ~ 1.2e-8,
+        // i.e. ~83000 steps per millisecond, against a cloud that reaches
+        // ~1700 bubbles - so writeInterval 1 is ~1.4e8 rows, tens of GB, and
+        // an fwrite on every rank on every step.  25 still resolves a bubble
+        // crossing a decomposition plane in several samples.
+        //
+        // Raise it for a production sweep, or use writeControl writeTime to
+        // tie the CSV to the field write cadence instead.
+        writeControl    timeStep;
+        writeInterval   25;
+        exclusionCoeff  -1.5;
+        useSphereAverage true;
+        J               J_MHD;
+    }
+}
+
+// ************************************************************************* //

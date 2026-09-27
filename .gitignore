@@ -24,3 +24,9 @@ __pycache__/
 .idea/
 *.swp
 .DS_Store
+
+# data/ holds curated small inputs -- injection calibration, the Eulerian
+# survey, and the measured resolved-VoF pore summaries the seeding weights
+# derive from. They are inputs, not simulation output, so the *.csv rule above
+# must not swallow them.
+!data/**/*.csv

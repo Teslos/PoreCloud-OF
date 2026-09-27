@@ -1,0 +1,117 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | foam-extend: Open Source CFD                    |
+|  \\    /   O peration     | Version:     4.0                                |
+|   \\  /    A nd           | Web:         http://www.foam-extend.org         |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+convertToMeters 1.0;
+
+// Domain: x=[0,500um] scan direction, y=[0,700um] depth (laser enters y_max going down), z=[0,500um] cross-scan width
+// No rotation needed: Y is vertical (largest dimension), laser enters from topWall (y_max) going downward
+
+vertices
+(
+	(0	0	0) 		//0
+	(500e-6	0	0)		//1
+	(500e-6	700e-6	0)		//2
+	(0	700e-6	0)		//3
+	(0	0	500e-6)		//4
+	(500e-6	0	500e-6)		//5
+	(500e-6	700e-6	500e-6)		//6
+	(0	700e-6	500e-6)		//7
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) (60 96 48)
+    simpleGrading
+    (
+        (   // x (scan direction): fine centre, coarse edges
+            (0.20 0.15 0.25)    // 0-100um: 9 cells, coarse->fine
+            (0.60 0.70 1)       // 100-400um: 42 cells, uniform fine (~7.1um)
+            (0.20 0.15 4)       // 400-500um: 9 cells, fine->coarse
+        )
+        (   // y (depth, 700um): fine keyhole zone 0-500um, coarse thermal buffer above
+            (0.714 0.833 1)     // 0-500um: 80 cells, uniform fine (~6.25um)
+            (0.286 0.167 4)     // 500-700um: 16 cells, fine->coarse (thermal buffer + gas)
+        )
+        (   // z (cross-scan width, 500um): fine centre, coarse edges
+            (0.20 0.17 0.25)    // 0-100um: 8 cells, coarse->fine
+            (0.60 0.66 1)       // 100-400um: 32 cells, uniform fine (~9.4um)
+            (0.20 0.17 4)       // 400-500um: 8 cells, fine->coarse
+        )
+    )
+);
+
+edges
+(
+);
+
+boundary
+(
+    back
+    {
+        type patch;
+        faces
+        (
+            (0 4 7 3)
+        );
+    }
+    front
+    {
+        type patch;
+        faces
+        (
+            (1 2 6 5)
+        );
+    }
+    leftWall
+    {
+        type patch;
+        faces
+        (
+            (0 3 2 1)
+        );
+    }
+    rightWall
+    {
+        type patch;
+        faces
+        (
+            (4 5 6 7)
+        );
+    }
+    topWall
+    {
+        type patch;
+        faces
+        (
+            (3 7 6 2)
+        );
+    }
+    bottomWall
+    {
+        type wall;
+        faces
+        (
+            (1 5 4 0)
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+
+// ************************************************************************* //

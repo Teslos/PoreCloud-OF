@@ -1,0 +1,73 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2506                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      setFieldsDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Fixed pore positions (reused from reference case)
+// Based on liquid-solid interface analysis at t = 1e-04
+
+defaultFieldValues
+(
+);
+
+regions
+(
+    // Pore 1
+    sphereToCell
+    {
+        centre  (1.892857e-04 5.086610e-04 2.078125e-04);
+        radius  3.5e-05;
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 0
+        );
+    }
+
+    // Pore 2
+    sphereToCell
+    {
+        centre  (3.107143e-04 5.086610e-04 2.921875e-04);
+        radius  3.5e-05;
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 0
+        );
+    }
+
+    // Pore 3
+    sphereToCell
+    {
+        centre  (1.964286e-04 4.904287e-04 2.078125e-04);
+        radius  3.5e-05;
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 0
+        );
+    }
+
+    // Pore 4
+    sphereToCell
+    {
+        centre  (2.750000e-04 4.904287e-04 1.890625e-04);
+        radius  3.5e-05;
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 0
+        );
+    }
+
+);
+
+// ************************************************************************* //

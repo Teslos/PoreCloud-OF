@@ -1,0 +1,68 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2506                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    object          controlDict;
+}
+
+application     laserbeamFoam;
+
+startFrom       latestTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         0.002;
+
+deltaT          1e-08;
+
+adjustTimeStep  yes;
+
+maxCo           0.7;
+
+maxAlphaCo      0.7;
+
+writeControl    adjustableRunTime;
+
+writeInterval   1e-05;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  8;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable yes;
+
+functions
+{
+    // PoreTracker (resolved-VoF) omitted: cost and accuracy confound, and its
+    // CSV lands in processor0/ under MPI. Matches the azimuthal run this is
+    // to be compared against.
+    poreCloud
+    {
+        type            poreCloud;
+        libs            ( "libPoreCloud.so" );
+        executeControl  timeStep;
+        executeInterval 1;
+    }
+}
+
+
+// ************************************************************************* //
