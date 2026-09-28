@@ -71,8 +71,8 @@ subModels
         {
             type            meltPoolInjection;
             massTotal       0;
-            SOI             0.001;
-            duration        0.001;
+            SOI             1e-4;
+            duration        2.4e-3;
             parcelBasisType fixed;
             nParticle       1;
 
@@ -92,63 +92,23 @@ subModels
             // used once here, put 2892 pores in the pool: 473% of the melt
             // volume, against 0.83-2.53% in the resolved runs.  Sample the
             // force field longer or over repeats instead.
-            rate            7.753089e15;
+            rate            1.319406e16;
             alphaName       alpha.metal;
             epsilonName     epsilon1;
             alphaMin        0.5;
             epsMin          0.5;
             maxParcels      20000;
 
-            // EXPERIMENTAL radial seeding - this is the one thing in this
-            // dictionary that does NOT come from the resolved-VoF runs.
+            // Measured, not assumed: the histogram of pore diameters from
+            // the same resolved-VoF runs (452 pores, 7 cases).  Mean volume
+            // 5.59e-15 m3 against their 5.92e-15, within 5%.
             //
-            // Source: in-situ X-ray radiography, ESRF 2025-11-14, condition
-            // `byz` = "scan-vertical plane" = this case's XY.  The letters
-            // are the EXPERIMENTAL convention and are a cyclic permutation
-            // of the simulation's: exp byz is sim XY, NOT sim YZ.  The data
-            // carries a sim_label column so the trap is checkable.
-            // 689 births, all inside the laser window; 590 inside 250 um and
-            // 99 (14.4%) beyond it, dropped.  250 um is the right outer edge
-            // here: the pool at the t=1 ms restart reaches 230 um, so every
-            // bin below has liquid in it and no weight is discarded by the
-            // injector.
-            //
-            // These are BIRTHS, not micro-CT final positions - nucleation
-            // events, which is what the injector needs.  Two biases travel
-            // with them: `birth` is first DETECTION (recall ~0.55, and a
-            // pore is invisible inside the keyhole), so births are late and
-            // the histogram is biased OUTWARD; and radiography projects
-            // through the plate, so r is the in-plane radius only and is a
-            // lower bound, tight to +-250 um.
-            //
-            // NOT transferred from the same dataset: the pore DIAMETERS.
-            // The experiment is AlSi10Mg at 100 W spot welds and its mean
-            // pore volume is 3.257e-13 m3 against the VoF 5.59e-15 - 58x
-            // larger, which with this rate implies a 252% void fraction.
-            // Force scales as d^3, so importing aluminium sizes into a steel
-            // pool would confound alloy with field.  Birth LOCATION is taken
-            // from experiment; size stays with the matched VoF runs, so this
-            // run differs from the uniform-seeded baseline in one variable.
-            radialSeeding
-            {
-                axisPoint     (250e-6 0 250e-6);
-                // ZERO, not 0.036. This case's timeVsLaserPosition holds the
-                // source at (250 700 250) um and ends at t = 100 us with
-                // outOfBounds clamp, so the laser never moves - it is a SPOT
-                // weld, unlike every scanning case in this repo. The measured
-                // cavity in the source run confirms it: centroid x = 235.8 um
-                // at t = 1 ms, where a 36 mm/s scan would put it at 286 um.
-                //
-                // That also makes the experimental weights directly applicable
-                // rather than approximately so: the ESRF data is spot welds
-                // about a static axis, which is the mismatch this repo has had
-                // to caveat everywhere else.
-                axisVelocity  (0 0 0);
-                edges   ( 0 2.5e-05 5e-05 7.5e-05 0.0001 0.000125 0.00015 0.000175 0.0002 0.000225 0.00025 );
-                weights ( 0.11864 0.15424 0.14576 0.07627 0.09492 0.13390 0.08644 0.08136 0.06610 0.04237 );
-                // per-bin counts: 70 91 86 45 56 79 51 48 39 25  (n=590)
-            }
-
+            // The first two bins are inflated by PoreTracker's detection
+            // floor - MIN_PORE_CELLS 5 piles pores up at ~9.3 um, which is
+            // why p5, p10 and p25 of that data are all identical.  Real
+            // pores below ~12 um exist but are not resolved there.  It
+            // matters little for the force, which scales as d^3 and is
+            // dominated by the reliable tail.
             // Measured, not assumed: pore diameters from the resolved-VoF
             // runs in results_matched_0.2T_f4000hz (452 pores, 7 cases).
             //

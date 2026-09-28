@@ -1,0 +1,14 @@
+// Spot weld: the laser does not move.
+//
+// Every other case in this repo interpolates (250 -> 340) um over 2.5 ms, i.e.
+// 36 mm/s. That scan is the reason the radial distributions here could not be
+// compared with the ESRF data, which is spot welds about a STATIC axis, and it
+// is why radialSeeding carries an axisVelocity at all.
+//
+// The block grading already puts the fine cells at the domain centre, so a
+// stationary source at x = 250 um sits in the refined region for the whole run
+// rather than scanning out of it.
+(
+    (0         (250e-6 700e-6 250e-6))
+    (2.5e-3    (250e-6 700e-6 250e-6))
+)
