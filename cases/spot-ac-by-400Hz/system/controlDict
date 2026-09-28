@@ -34,7 +34,12 @@ maxAlphaCo      0.7;
 
 writeControl    adjustableRunTime;
 
-writeInterval   1e-05;
+// 2e-5, not the 1e-5 every other case uses. thl07251's filesystem is 91%
+// full and shared with several other users, so this pair writes ~10 GB each
+// instead of ~21 GB. The cost is nil: poreForceReport writes the cloud CSV
+// every 25 TIMESTEPS regardless of this setting, so the pore-force resolution
+// is untouched, and 125 Eulerian snapshots still resolve one 2.5 ms AC cycle.
+writeInterval   2e-05;
 
 purgeWrite      0;
 
